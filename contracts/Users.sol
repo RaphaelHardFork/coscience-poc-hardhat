@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * @title Contract details
  * @author Sarah, Henry & Raphael
- * @notice contract goal
+ * @notice Contract goal
  * @dev This contract is used to identify user on the Dapp
  * */
 
@@ -20,13 +20,15 @@ contract Users is Ownable {
         Pending,
         Approved
     }
-
+    /**
+     * @notice User struct
+     * @dev The is for...
+     */
     struct User {
         bytes32 hashedPassword;
         WhiteList status;
         uint256 id;
-        uint256 nbOfWallet;
-        mapping(uint256 => address) walletList;
+        address[] walletList;
         string profileCID;
     }
 
@@ -34,10 +36,11 @@ contract Users is Ownable {
     Counters.Counter private _userID;
 
     mapping(uint256 => User) private _user;
+    mapping(address => uint256) private _userIdPointer;
 
     //events
     event Registered(address indexed user, uint256 userID);
-    event Approved(address indexed user, uint256 userID);
+    event Approved(uint256 indexed userID);
 
     //constructor
     constructor(address owner_) Ownable() {
@@ -53,27 +56,51 @@ contract Users is Ownable {
         User storage u = _user[userID];
         u.hashedPassword = hashedPassword_;
         u.id = userID;
-        u.nbOfWallet = 1;
         u.status = WhiteList.Pending;
         u.profileCID = profileCID_;
-        u.walletList[1] = msg.sender;
+        u.walletList.push(msg.sender);
+        _userIdPointer[msg.sender] = userID;
 
         _userID.increment();
-
         emit Registered(msg.sender, userID);
         return true;
     }
 
-    function acceptUser(address user_, uint256 userID_) public onlyOwner returns (bool) {
+    function acceptUser(uint256 userID_) public onlyOwner returns (bool) {
+        require(_user[userID_].status == WhiteList.Pending, "Users: User is not registered");
         _user[userID_].status = WhiteList.Approved;
-        emit Approved(user_, userID_);
+        emit Approved(userID_);
         return true;
     }
 
-    function addWallet(address newAddress_, uint256 userID_) public returns (bool) {
-        uint256 listLength = _user[userID_].nbOfWallet;
-        _user[userID_].walletList[listLength + 1] = newAddress_;
+    function addWallet(address newAddress_) public returns (bool) {
+        uint256 userID = _userIdPointer[msg.sender];
+        require(_user[userID].status == WhiteList.Approved, "Users: your must be approved to add wallet");
+        _user[userID].walletList.push(newAddress_);
+        _userIdPointer[newAddress_] = userID;
         return true;
+    }
+
+    function changePassword(bytes32 newPassword) public returns (bool) {
+        uint256 userID = _userIdPointer[msg.sender];
+        require(_user[userID].hashedPassword != newPassword, "Users: Passwords must be different");
+        _user[userID].hashedPassword = newPassword;
+        return true;
+    }
+
+    function forgetWallet(bytes32 password, uint256 userID) public returns (bool) {
+        require(password == _user[userID].hashedPassword, "Users: Incorrect password");
+        _user[userID].walletList.push(msg.sender);
+        _userIdPointer[msg.sender] = userID;
+        return true;
+    }
+
+    function profileID(address account) public view returns (uint256) {
+        return _userIdPointer[account];
+    }
+
+    function userInfo(uint256 userID) public view returns (User memory) {
+        return _user[userID];
     }
 
     function statusByUserID(uint256 userID) public view returns (WhiteList) {
@@ -85,40 +112,10 @@ contract Users is Ownable {
     }
 
     function nbOfWalletByUserID(uint256 userID) public view returns (uint256) {
-        return _user[userID].nbOfWallet;
+        return _user[userID].walletList.length;
     }
 
-   //recherche array pour address.
-    function walletListByUserID(uint256 userID) public view returns () {
-        uint256 nbOfWallet = nbOfWalletByUserID(userID);
-        address[nbOfWallet]
+    function walletListByUserID(uint256 userID) public view returns (address[] memory) {
+        return _user[userID].walletList;
     }
 }
-
-// TODO => mapping address => userID 
-/**
-contract Array {
-    mapping (uint256 => address) private _list;
-    uint256 _length = 0;
-    
-    function fillList(address uno, address dos, address tres) public returns(bool){
-        _list[1] = uno;
-        _list[2] = dos;
-        _list[3] = tres;
-        _length = 3;
-        return true;
-    }
-    
-    function seeList() public view returns(address[] memory){
-        uint256 length = _length;
-        uint256 i=1;
-        address[] memory a = new address[](length);
-        for (i ; i<=length;i++){
-          a[i] = _list[i];
-        }
-        
-        return a;
-    }
-
-}
- */
