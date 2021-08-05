@@ -41,7 +41,7 @@ contract Users is Ownable {
     event Registered(address indexed user, uint256 userID);
     event Approved(uint256 indexed userID);
 
-    //constructor
+    ///@dev the owner account will be the one that deploys the contract but change with {transferOwnership}.
     constructor(address owner_) Ownable() {
         transferOwnership(owner_);
     }
@@ -50,6 +50,11 @@ contract Users is Ownable {
 
     //utils
     //external => public => private => pure function
+    /**
+     * @dev function to register a new user
+     * @param hashedPassword_ the password entered by user and hashed
+     * @param profilCID_ ?
+     */
     function register(bytes32 hashedPassword_, string memory profileCID_) public returns (bool) {
         uint256 userID = _userID.current();
         User storage u = _user[userID];
@@ -65,6 +70,11 @@ contract Users is Ownable {
         return true;
     }
 
+    /**
+     * @dev function to accept user
+     * @param userID_ verify status of the user
+     * @custom:Approved , emitting the event that a new user has been registered
+     */
     function acceptUser(uint256 userID_) public onlyOwner returns (bool) {
         require(_user[userID_].status == WhiteList.Pending, "Users: User is not registered");
         _user[userID_].status = WhiteList.Approved;
