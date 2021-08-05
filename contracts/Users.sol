@@ -20,6 +20,7 @@ contract Users is Ownable {
         Approved
     }
 
+    ///@notice data structure that stores a user.
     struct User {
         bytes32 hashedPassword;
         WhiteList status;
@@ -32,6 +33,7 @@ contract Users is Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _userID;
 
+    ///
     mapping(uint256 => User) private _user;
     mapping(address => uint256) private _userIdPointer;
 
