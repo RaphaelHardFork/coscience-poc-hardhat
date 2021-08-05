@@ -33,11 +33,11 @@ contract Users is Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _userID;
 
-    ///
+    ///@dev it maps the user's wallet address with user ID
     mapping(uint256 => User) private _user;
     mapping(address => uint256) private _userIdPointer;
 
-    //events
+    ///@dev events first one for when an user is registered and second when approved.
     event Registered(address indexed user, uint256 userID);
     event Approved(uint256 indexed userID);
 
