@@ -128,5 +128,10 @@ describe('Users', function () {
     it('should revert if not approved', async function () {
       await expect()
     })
+    // TODO
+    // Change struct to one getter
+    // ban user function
+    // forgotWallet function
+    // changePassword
   })
 })
