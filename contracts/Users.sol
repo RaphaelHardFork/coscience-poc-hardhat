@@ -82,6 +82,10 @@ contract Users is Ownable {
         return true;
     }
 
+    /**
+     * @dev function to add a wallet
+     * @param newAddress_ is push in walletList if approved
+     */
     function addWallet(address newAddress_) public returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         require(_user[userID].status == WhiteList.Approved, "Users: your must be approved to add wallet");
@@ -90,6 +94,10 @@ contract Users is Ownable {
         return true;
     }
 
+    /**
+     * @dev function to change and add a new password, if user forgot
+     * @param newPassword_ replace the previous if it's different from the first one.
+     */
     function changePassword(bytes32 newPassword) public returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         require(_user[userID].hashedPassword != newPassword, "Users: Passwords must be different");
@@ -97,6 +105,11 @@ contract Users is Ownable {
         return true;
     }
 
+    /**
+     * @dev function to permit a user to recover a forgotten wallet.
+     * @param password verify the password
+     * @param userID verify the ID
+     */
     function forgetWallet(bytes32 password, uint256 userID) public returns (bool) {
         require(password == _user[userID].hashedPassword, "Users: Incorrect password");
         _user[userID].walletList.push(msg.sender);
@@ -104,6 +117,7 @@ contract Users is Ownable {
         return true;
     }
 
+    ///@dev functions to get details and public info about the user
     function profileID(address account) public view returns (uint256) {
         return _userIdPointer[account];
     }
