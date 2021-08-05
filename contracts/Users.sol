@@ -13,17 +13,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * */
 
 contract Users is Ownable {
-    //type
-    using Counters for Counters.Counter;
     enum WhiteList {
         NotApproved,
         Pending,
         Approved
     }
-    /**
-     * @notice User struct
-     * @dev The is for...
-     */
+
     struct User {
         bytes32 hashedPassword;
         WhiteList status;
@@ -32,7 +27,8 @@ contract Users is Ownable {
         string profileCID;
     }
 
-    //storage
+    //@dev Provides counters that can only be incremented, decremented or reset. This can be used e.g. to track the number of elements in a mapping, issuing ERC721 ids, or counting request ids.
+    using Counters for Counters.Counter;
     Counters.Counter private _userID;
 
     mapping(uint256 => User) private _user;
