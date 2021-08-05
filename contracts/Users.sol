@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title Contract details
+ * @title  Users and Owners
  * @author Sarah, Henry & Raphael
- * @notice Contract goal
+ * @notice you can use this contract to define users details and approved
  * @dev This contract is used to identify user on the Dapp
  * */
 
