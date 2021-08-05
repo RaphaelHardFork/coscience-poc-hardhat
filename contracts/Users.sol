@@ -6,24 +6,21 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title Contract details
+ * @title  Users and Owners
  * @author Sarah, Henry & Raphael
- * @notice Contract goal
+ * @notice you can use this contract to define users details and approved
  * @dev This contract is used to identify user on the Dapp
  * */
 
 contract Users is Ownable {
-    //type
-    using Counters for Counters.Counter;
+    ///@notice enum that listing status of about a user process acceptation.
     enum WhiteList {
         NotApproved,
         Pending,
         Approved
     }
-    /**
-     * @notice User struct
-     * @dev The is for...
-     */
+
+    ///@notice data structure that stores a user.
     struct User {
         bytes32 hashedPassword;
         WhiteList status;
@@ -32,17 +29,19 @@ contract Users is Ownable {
         string profileCID;
     }
 
-    //storage
+    ///@dev Provides counters that can only be incremented, decremented or reset. This can be used e.g. to track the number of elements in a mapping, issuing ERC721 ids, or counting request ids.
+    using Counters for Counters.Counter;
     Counters.Counter private _userID;
 
+    ///@dev it maps the user's wallet address with user ID
     mapping(uint256 => User) private _user;
     mapping(address => uint256) private _userIdPointer;
 
-    //events
+    ///@dev events first one for when an user is registered and second when approved.
     event Registered(address indexed user, uint256 userID);
     event Approved(uint256 indexed userID);
 
-    //constructor
+    ///@dev the owner account will be the one that deploys the contract but change with {transferOwnership}.
     constructor(address owner_) Ownable() {
         transferOwnership(owner_);
     }
@@ -51,6 +50,11 @@ contract Users is Ownable {
 
     //utils
     //external => public => private => pure function
+    /**
+     * @dev function to register a new user
+     * @param hashedPassword_ the password entered by user and hashed
+     * @param profilCID_ ?
+     */
     function register(bytes32 hashedPassword_, string memory profileCID_) public returns (bool) {
         uint256 userID = _userID.current();
         User storage u = _user[userID];
@@ -66,6 +70,11 @@ contract Users is Ownable {
         return true;
     }
 
+    /**
+     * @dev function to accept user
+     * @param userID_ verify status of the user
+     * @custom:Approved , emitting the event that a new user has been registered
+     */
     function acceptUser(uint256 userID_) public onlyOwner returns (bool) {
         require(_user[userID_].status == WhiteList.Pending, "Users: User is not registered");
         _user[userID_].status = WhiteList.Approved;
@@ -73,6 +82,10 @@ contract Users is Ownable {
         return true;
     }
 
+    /**
+     * @dev function to add a wallet
+     * @param newAddress_ is push in walletList if approved
+     */
     function addWallet(address newAddress_) public returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         require(_user[userID].status == WhiteList.Approved, "Users: your must be approved to add wallet");
@@ -81,6 +94,10 @@ contract Users is Ownable {
         return true;
     }
 
+    /**
+     * @dev function to change and add a new password, if user forgot
+     * @param newPassword_ replace the previous if it's different from the first one.
+     */
     function changePassword(bytes32 newPassword) public returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         require(_user[userID].hashedPassword != newPassword, "Users: Passwords must be different");
@@ -88,6 +105,11 @@ contract Users is Ownable {
         return true;
     }
 
+    /**
+     * @dev function to permit a user to recover a forgotten wallet.
+     * @param password verify the password
+     * @param userID verify the ID
+     */
     function forgetWallet(bytes32 password, uint256 userID) public returns (bool) {
         require(password == _user[userID].hashedPassword, "Users: Incorrect password");
         _user[userID].walletList.push(msg.sender);
@@ -95,6 +117,7 @@ contract Users is Ownable {
         return true;
     }
 
+    ///@dev functions to get details and public info about the user
     function profileID(address account) public view returns (uint256) {
         return _userIdPointer[account];
     }
