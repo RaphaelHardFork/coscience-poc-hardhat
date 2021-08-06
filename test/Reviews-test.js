@@ -3,14 +3,12 @@
 const { expect } = require('chai')
 const { ethers } = require('hardhat')
 
-const CONTRACT_NAME = 'Comments'
+const CONTRACT_NAME = 'Reviews'
 const ADDRESS_ZERO = ethers.constants.AddressZero
 const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
 
-describe('Comments', function () {
-  let Comments,
-    comments,
-    Reviews,
+describe('Reviews', function () {
+  let Reviews,
     reviews,
     Articles,
     articles,
@@ -31,16 +29,8 @@ describe('Comments', function () {
     articles = await Articles.connect(dev).deploy(owner.address)
     await articles.deployed()
 
-    Reviews = await ethers.getContractFactory('Reviews')
+    Reviews = await ethers.getContractFactory(CONTRACT_NAME)
     reviews = await Reviews.connect(dev).deploy(owner.address, articles.address)
     await reviews.deployed()
-
-    Comments = await ethers.getContractFactory(CONTRACT_NAME)
-    comments = await Comments.connect(dev).deploy(
-      owner.address,
-      articles.address,
-      reviews.address
-    )
-    await comments.deployed()
   })
 })
