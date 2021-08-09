@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * */
 
 contract Users is Ownable {
+    using Counters for Counters.Counter;
     ///@notice enum that listing status of about a user process acceptation.
     enum WhiteList {
         NotApproved,
@@ -30,7 +31,6 @@ contract Users is Ownable {
     }
 
     ///@dev Provides counters that can only be incremented, decremented or reset. This can be used e.g. to track the number of elements in a mapping, issuing ERC721 ids, or counting request ids.
-    using Counters for Counters.Counter;
     Counters.Counter private _userID;
 
     ///@dev it maps the user's wallet address with user ID
@@ -40,6 +40,7 @@ contract Users is Ownable {
     ///@dev events first one for when an user is registered and second when approved.
     event Registered(address indexed user, uint256 userID);
     event Approved(uint256 indexed userID);
+    event Banned(uint256 indexed userID);
 
     ///@dev the owner account will be the one that deploys the contract but change with {transferOwnership}.
     constructor(address owner_) Ownable() {
@@ -53,7 +54,7 @@ contract Users is Ownable {
     /**
      * @dev function to register a new user
      * @param hashedPassword_ the password entered by user and hashed
-     * @param profilCID_ ?
+     * @param profileCID_ ?
      */
     function register(bytes32 hashedPassword_, string memory profileCID_) public returns (bool) {
         uint256 userID = _userID.current();
@@ -73,12 +74,24 @@ contract Users is Ownable {
     /**
      * @dev function to accept user
      * @param userID_ verify status of the user
-     * @custom:Approved , emitting the event that a new user has been registered
+     * @custom:approved , emitting the event that a new user has been registered
      */
     function acceptUser(uint256 userID_) public onlyOwner returns (bool) {
         require(_user[userID_].status == WhiteList.Pending, "Users: User is not registered");
         _user[userID_].status = WhiteList.Approved;
         emit Approved(userID_);
+        return true;
+    }
+
+    /**
+    * @dev function to ban user
+    * @param userID_ verify status of the user
+    * @custom:banned , emitting the event that a user has been banned
+    */
+    function banUser(uint256 userID_) public onlyOwner returns (bool) {
+        require(_user[userID_].status != WhiteList.NotApproved, "Users: User is not registered or already banned");
+        _user[userID_].status = WhiteList.NotApproved;
+        emit Banned(userID_);
         return true;
     }
 
@@ -96,7 +109,7 @@ contract Users is Ownable {
 
     /**
      * @dev function to change and add a new password, if user forgot
-     * @param newPassword_ replace the previous if it's different from the first one.
+     * @param newPassword replace the previous if it's different from the first one.
      */
     function changePassword(bytes32 newPassword) public returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
@@ -120,10 +133,6 @@ contract Users is Ownable {
     ///@dev functions to get details and public info about the user
     function profileID(address account) public view returns (uint256) {
         return _userIdPointer[account];
-    }
-
-    function userInfo(uint256 userID) public view returns (User memory) {
-        return _user[userID];
     }
 
     function statusByUserID(uint256 userID) public view returns (WhiteList) {
