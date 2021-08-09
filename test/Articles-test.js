@@ -43,5 +43,19 @@ describe('Articles', function () {
     articles = await Articles.connect(dev).deploy(owner.address)
     await articles.deployed()
   })
-  // test
+  describe('publish', function () {
+    let publishCall
+
+    it('should emit a Published event', async function () {
+      expect(publishCall)
+        .to.emit(articles, 'Published')
+        .withArgs(wallet1.address, 0)
+    })
+
+    it('should fill the struct properly for user 0', async function () {
+      const struct = await articles.reviewInfo(0)
+      expect(struct.id, 'id').to.equal(0)
+      expect(struct.contentCID, 'CID').to.equal(CID)
+    })
+  })
 })

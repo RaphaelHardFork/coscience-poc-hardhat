@@ -26,10 +26,13 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
         uint256 id;
         address author;
         string contentCID;
+        string content;
         bool contentBanned;
         address target;
         uint256 targetID;
         uint256[] comments;
+        uint256 timestamp;
+        uint256 likeCount;
         // edition date & bool with time duration
     }
     /*
@@ -60,6 +63,7 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
     Reviews private _reviews;
     Counters.Counter private _commentID;
     mapping(uint256 => Comment) private _comment;
+    mapping(address => uint[]) private _userComments;
 
     event Posted(address indexed poster, uint256 commentID, address indexed target, uint256 targetID);
     event CommentBanned(uint256 indexed commentID);
@@ -138,6 +142,11 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
         return true;
     }
 
+    function editComment(uint256 commentID, string memory editcomment) public onlyOwner returns (bool){
+        _comment[commentID].content= editcomment;
+        return true;
+    }
+
     function commentInfo(uint256 commentID) public view returns (Comment memory) {
         return _comment[commentID];
     }
@@ -145,5 +154,9 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
     // is useful? enumerable? two way to find the list?
     function nbOfComment() public view returns (uint256) {
         return _commentID.current();
+    }
+
+    function getUserComments() public view onlyOwner returns(uint[] memory commentList){
+        return _userComments[msg.sender];
     }
 }

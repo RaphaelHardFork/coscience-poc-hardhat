@@ -21,8 +21,12 @@ contract Users is Ownable {
         Approved
     }
 
+    //for owner admin, at the end of the code.
+    bool public stopped = false;
+
     ///@notice data structure that stores a user.
     struct User {
+        string username;
         bytes32 hashedPassword;
         WhiteList status;
         uint256 id;
@@ -36,6 +40,7 @@ contract Users is Ownable {
     ///@dev it maps the user's wallet address with user ID
     mapping(uint256 => User) private _user;
     mapping(address => uint256) private _userIdPointer;
+    mapping(string => bool) private _usernames;
 
     ///@dev events first one for when an user is registered and second when approved.
     event Registered(address indexed user, uint256 userID);
@@ -53,6 +58,8 @@ contract Users is Ownable {
         require(_user[userID].status == WhiteList.Approved, "Users: you be approved to use this feature.");
         _;
     }
+
+    modifier usernameTaken(string memory username){require(!_usernames[username],"Username already taken"); _;}
 
     //utils
     //external => public => private => pure function
@@ -74,6 +81,13 @@ contract Users is Ownable {
 
         emit Registered(msg.sender, userID);
         return true;
+    }
+
+    /// @notice Check username available or not
+    /// @param  _username username to Check
+    /// @return status true or false
+    function usernameAvailable(string memory _username) public view returns(bool status){
+        return !_usernames[_username];
     }
 
     /**
@@ -154,5 +168,23 @@ contract Users is Ownable {
 
     function walletListByUserID(uint256 userID) public view returns (address[] memory) {
         return _user[userID].walletList;
+    }
+/*
+****************************************Owner Admin ******************************************************************************************
+*/
+    /// @notice Get balance of contract 
+    /// @return balance of contract
+    function getBalance()public view onlyOwner() returns(uint balance){
+        return address(this).balance;
+    }
+    
+    function stopDapp() public onlyOwner{
+        require(!stopped,"Already stopped");
+        stopped=true;
+    }
+    
+    function startDapp() public onlyOwner{
+        require(stopped,"Already started");
+        stopped=false;
     }
 }

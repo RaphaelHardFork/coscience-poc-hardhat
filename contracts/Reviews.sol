@@ -28,6 +28,7 @@ contract Reviews is ERC721Enumerable, ERC721URIStorage, Users {
         bool contentBanned;
         uint256 targetID;
         uint256[] comments;
+        uint timestamp;
         // edition date & bool with time duration
         // reviews only on articles
     }
