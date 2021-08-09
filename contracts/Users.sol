@@ -48,6 +48,11 @@ contract Users is Ownable {
     }
 
     //modifier
+    modifier onlyUser(){
+        uint256 userID = _userIdPointer[msg.sender];
+        require(_user[userID].status == WhiteList.Approved, "Users: you be approved to use this feature.");
+        _;
+    }
 
     //utils
     //external => public => private => pure function
@@ -57,6 +62,7 @@ contract Users is Ownable {
      * @param profileCID_ ?
      */
     function register(bytes32 hashedPassword_, string memory profileCID_) public returns (bool) {
+        _userID.increment();
         uint256 userID = _userID.current();
         User storage u = _user[userID];
         u.hashedPassword = hashedPassword_;
@@ -66,7 +72,6 @@ contract Users is Ownable {
         u.walletList.push(msg.sender);
         _userIdPointer[msg.sender] = userID;
 
-        _userID.increment();
         emit Registered(msg.sender, userID);
         return true;
     }

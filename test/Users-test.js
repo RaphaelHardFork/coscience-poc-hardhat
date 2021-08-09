@@ -4,6 +4,7 @@ const { expect } = require('chai')
 const { ethers } = require('hardhat')
 
 // some tests: https://github.com/RaphaelHardFork/ico-hardhat
+// await contract.connect(signer).function()
 
 const CONTRACT_NAME = 'Users'
 const ADDRESS_ZERO = ethers.constants.AddressZero
@@ -128,5 +129,10 @@ describe('Users', function () {
     it('should revert if not approved', async function () {
       await expect()
     })
+    // TODO
+    // Change struct to one getter
+    // ban user function
+    // forgotWallet function
+    // changePassword
   })
 })
