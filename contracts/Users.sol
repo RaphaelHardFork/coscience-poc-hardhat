@@ -8,20 +8,34 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * @title  Users and Owners
  * @author Sarah, Henry & Raphael
- * @notice you can use this contract to define users details and approved
- * @dev This contract is used to identify user on the Dapp
+ *
+ * @notice This contract is set to create blockchain identity of users of the CoScience App.
+ * @dev Important features:
+ *          - Allow users to register more than one wallet
+ *          - Recovery user account through a password
+ *          - Users have to be validated by a centralized agent (owner)
+ *          - Informations of the user are stored on IPFS
  * */
 
 contract Users is Ownable {
     using Counters for Counters.Counter;
-    ///@notice enum that listing status of about a user process acceptation.
+    /** @notice Types & storages
+     *  @dev enum {WhiteList} is used to set the status of the user
+     * */
     enum WhiteList {
         NotApproved,
         Pending,
         Approved
     }
 
-    ///@notice data structure that stores a user.
+    /**
+     * @dev struct User contains the following keys:
+     *          - {hashedPassword}: keccak256 hash of the password defined by users
+     *          - {status}: user approval status
+     *          - {id}: set by Counters.sol
+     *          - {walletList}: list of wallets owned by the user
+     *          - {profileCID}: CID pointer to user's profile information
+     * */
     struct User {
         bytes32 hashedPassword;
         WhiteList status;
@@ -30,36 +44,61 @@ contract Users is Ownable {
         string profileCID;
     }
 
-    ///@dev Provides counters that can only be incremented, decremented or reset. This can be used e.g. to track the number of elements in a mapping, issuing ERC721 ids, or counting request ids.
     Counters.Counter private _userID;
 
-    ///@dev it maps the user's wallet address with user ID
+    ///@dev A mapping to find user's Struct with the {id}
     mapping(uint256 => User) private _user;
+
+    /// @dev A mapping to get the user ID with the user wallet address
     mapping(address => uint256) private _userIdPointer;
 
-    ///@dev events first one for when an user is registered and second when approved.
+    /**
+     * @notice Events
+     * @dev Emitted when an user is succesfully registered.
+     *
+     * At this moment the user still have the Pending status in his account
+     * */
     event Registered(address indexed user, uint256 userID);
+
+    /**
+     * @dev Emitted when an user is approved by the owner of the contract
+     * */
     event Approved(uint256 indexed userID);
+
+    /**
+     * @dev Emitted when an user disapproved by the owner.
+     * This can happen after this latter was approved
+     * */
     event Banned(uint256 indexed userID);
 
-    ///@dev the owner account will be the one that deploys the contract but change with {transferOwnership}.
+    /**
+     * @notice Constructor
+     * @dev The parameter {owner_} is set in case the deployer is different from the owner (see Ownable.sol)
+     * */
     constructor(address owner_) Ownable() {
         transferOwnership(owner_);
     }
 
-    //modifier
-    modifier onlyUser(){
+    /**
+     * @notice Modifiers
+     * @dev This prevent a Pending or Not Approved user to use a function
+     *
+     * This modifier is set here to be used in other contracts
+     * */
+    modifier onlyUser() {
         uint256 userID = _userIdPointer[msg.sender];
         require(_user[userID].status == WhiteList.Approved, "Users: you be approved to use this feature.");
         _;
     }
 
-    //utils
-    //external => public => private => pure function
     /**
-     * @dev function to register a new user
-     * @param hashedPassword_ the password entered by user and hashed
-     * @param profileCID_ ?
+     * @notice Public functions
+     * @dev This function allow a wallet to register as a user
+     *
+     * Emit a {Registered} event
+     *
+     * @param hashedPassword_ the hash of the user's password (done in the front-end part)
+     * @param profileCID_ the CID hash allowing to get the user's profile informations
      */
     function register(bytes32 hashedPassword_, string memory profileCID_) public returns (bool) {
         _userID.increment();
@@ -77,9 +116,11 @@ contract Users is Ownable {
     }
 
     /**
-     * @dev function to accept user
-     * @param userID_ verify status of the user
-     * @custom:approved , emitting the event that a new user has been registered
+     * @dev This function allows the owner to accept an user which is in Pending status
+     *
+     * Emit an {Approved} event.
+     *
+     * @param userID_ user ID is specify to get access to the corresponding Struct User
      */
     function acceptUser(uint256 userID_) public onlyOwner returns (bool) {
         require(_user[userID_].status == WhiteList.Pending, "Users: User is not registered");
@@ -89,10 +130,12 @@ contract Users is Ownable {
     }
 
     /**
-    * @dev function to ban user
-    * @param userID_ verify status of the user
-    * @custom:banned , emitting the event that a user has been banned
-    */
+     * @dev Allows the owner to ban an user (with Pending or Approved status)
+     *
+     * Emit a {Banned} event
+     *
+     * @param userID_ user ID is specify to get access to the corresponding Struct User
+     */
     function banUser(uint256 userID_) public onlyOwner returns (bool) {
         require(_user[userID_].status != WhiteList.NotApproved, "Users: User is not registered or already banned");
         _user[userID_].status = WhiteList.NotApproved;
@@ -101,18 +144,22 @@ contract Users is Ownable {
     }
 
     /**
-     * @dev function to add a wallet
-     * @param newAddress_ is push in walletList if approved
+     * @dev This function allow an user to add another wallet to be linked with his profile
+     *
+     * This function is set a security feature for unexperienced user which could lost his access to his wallet.
+     * The list of wallet is stored in the User Struct
+     *
+     * @param newAddress the new wallet address specified by the user
      */
-    function addWallet(address newAddress_) public returns (bool) {
+    function addWallet(address newAddress) public returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         require(_user[userID].status == WhiteList.Approved, "Users: your must be approved to add wallet");
-        _user[userID].walletList.push(newAddress_);
-        _userIdPointer[newAddress_] = userID;
+        _user[userID].walletList.push(newAddress);
+        _userIdPointer[newAddress] = userID;
         return true;
     }
 
-    /**
+    /** NATSPEC RAPH STOP HERE
      * @dev function to change and add a new password, if user forgot
      * @param newPassword replace the previous if it's different from the first one.
      */
