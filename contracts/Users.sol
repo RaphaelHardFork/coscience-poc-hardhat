@@ -46,6 +46,7 @@ contract Users is Ownable {
     event Registered(address indexed user, uint256 userID);
     event Approved(uint256 indexed userID);
     event Banned(uint256 indexed userID);
+    event ChangedPassword(uint256 indexed userID, bytes32 oldPassword, bytes32 newPassword);
 
     ///@dev the owner account will be the one that deploys the contract but change with {transferOwnership}.
     constructor(address owner_) Ownable() {
@@ -132,8 +133,10 @@ contract Users is Ownable {
      */
     function changePassword(bytes32 newPassword) public returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
+        require(_user[userID].status == WhiteList.Approved || _user[userID].status == WhiteList.Pending, "Users: your must be approved or pending to change password");
         require(_user[userID].hashedPassword != newPassword, "Users: Passwords must be different");
         _user[userID].hashedPassword = newPassword;
+        emit ChangedPassword(userID, _user[userID].hashedPassword, newPassword);
         return true;
     }
 

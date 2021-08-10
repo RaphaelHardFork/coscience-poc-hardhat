@@ -3,8 +3,8 @@ require('@nomiclabs/hardhat-solhint')
 require('hardhat-docgen')
 require('dotenv').config()
 
-const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID
-const PRIVATE_KEY = process.env.PRIVATE_KEY
+// const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID
+// const PRIVATE_KEY = process.env.PRIVATE_KEY
 
 /**
  * @type import('hardhat/config').HardhatUserConfig

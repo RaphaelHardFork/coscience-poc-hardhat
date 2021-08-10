@@ -21,7 +21,7 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
         string contentCID;
         uint256[] comments;
         uint256[] reviews;
-        uint likeCount;
+        uint256 likeCount;
         //metrics
     }
 
