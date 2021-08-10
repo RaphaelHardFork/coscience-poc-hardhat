@@ -182,7 +182,7 @@ describe('Users', function () {
       let changePasswordCall
       beforeEach(async function () {
         await users.connect(wallet1).register(HASHED_PASSWORD, CID)
-        // await users.connect(wallet2).register(HASHED_PASSWORD, CID)
+        await users.connect(wallet2).register(HASHED_PASSWORD, CID)
         await users.connect(owner).acceptUser(1)
 
         changePasswordCall = await users
