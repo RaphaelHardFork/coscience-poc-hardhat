@@ -37,6 +37,7 @@ contract Users is Ownable {
      *          - {profileCID}: CID pointer to user's profile information
      * */
     struct User {
+        // usernames
         bytes32 hashedPassword;
         WhiteList status;
         uint256 id;
@@ -151,9 +152,8 @@ contract Users is Ownable {
      *
      * @param newAddress    the new wallet address specified by the user
      */
-    function addWallet(address newAddress) public returns (bool) {
+    function addWallet(address newAddress) public onlyUser returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
-        require(_user[userID].status == WhiteList.Approved, "Users: your must be approved to add wallet");
         _user[userID].walletList.push(newAddress);
         _userIdPointer[newAddress] = userID;
         return true;
@@ -164,7 +164,7 @@ contract Users is Ownable {
      *
      * @param newPassword   the hash of the new user's password
      */
-    function changePassword(bytes32 newPassword) public returns (bool) {
+    function changePassword(bytes32 newPassword) public onlyUser returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         require(_user[userID].hashedPassword != newPassword, "Users: Passwords must be different");
         _user[userID].hashedPassword = newPassword;
