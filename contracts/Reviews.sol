@@ -33,6 +33,7 @@ contract Reviews is ERC721Enumerable, ERC721URIStorage, Users {
     }
 
     // storage & event
+    Users private _users;
     Articles private _articles;
     Counters.Counter private _reviewID;
     mapping(uint256 => Review) private _review;
@@ -40,12 +41,23 @@ contract Reviews is ERC721Enumerable, ERC721URIStorage, Users {
     event Posted(address indexed poster, uint256 reviewID, uint256 targetID);
     event ReviewBanned(uint256 indexed _reviewID);
 
-    constructor(address owner_, address articlesContract) Users(owner_) ERC721("Review", "REV") {
+    constructor(
+        address owner_,
+        address articlesContract,
+        address usersContract
+    ) Users(owner_) ERC721("Review", "REV") {
         _articles = Articles(articlesContract);
+        _users = Users(usersContract);
         // baseURI override and public
     }
 
     // overrides
+    modifier onlyUser() override {
+        uint256 userID = _users.profileID(msg.sender);
+        require(_users.userStatus(userID) == WhiteList.Approved, "Users: you must be approved to use this feature.");
+        _;
+    }
+
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -110,5 +122,13 @@ contract Reviews is ERC721Enumerable, ERC721URIStorage, Users {
     // is useful? enumerable? two way to find the list?
     function nbOfReview() public view returns (uint256) {
         return _reviewID.current();
+    }
+
+    function articlesAddress() public view returns (Articles) {
+        return _articles;
+    }
+
+    function usersAddress() public view returns (Users) {
+        return _users;
     }
 }

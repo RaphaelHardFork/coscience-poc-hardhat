@@ -26,15 +26,25 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
 
     //storage
     Counters.Counter private _articleID;
+    Users private _users;
+
     mapping(uint256 => Article) private _article;
 
     //event
     event Published(address indexed author, uint256 articleID, string abstractCID);
     event ArticleBanned(uint256 indexed articleID);
 
-    constructor(address owner_) Users(owner_) ERC721("Article", "ART") {}
+    constructor(address owner_, address usersContract) Users(owner_) ERC721("Article", "ART") {
+        _users = Users(usersContract);
+    }
 
     // overrides
+    modifier onlyUser() override {
+        uint256 userID = _users.profileID(msg.sender);
+        require(_users.userStatus(userID) == WhiteList.Approved, "Users: you must be approved to use this feature.");
+        _;
+    }
+
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -66,7 +76,7 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
         address[] memory coAuthor,
         string memory abstractCID,
         string memory contentCID
-    ) public onlyUser returns (uint256) {
+    ) public returns (uint256) {
         _articleID.increment();
         uint256 articleID = _articleID.current();
         _safeMint(msg.sender, articleID);
@@ -96,7 +106,7 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
 
     function fillCommentsArray(uint256 articleID, uint256 commentID) public returns (bool) {
         // check needed
-        _article[articleID].reviews.push(commentID);
+        _article[articleID].comments.push(commentID);
         return true;
     }
 

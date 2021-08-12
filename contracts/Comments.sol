@@ -8,12 +8,14 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "./Users.sol";
 import "./Articles.sol";
 import "./Reviews.sol";
+import "./Users.sol";
 
 /**
  * @title Comments
- * @notice TODO
- * @dev test setBaseUri (if useful)
- *  https://pinata.gateway
+ * @notice
+ * @dev
+ * TODO test setBaseUri (if useful)
+ * https://pinata.gateway
  * CID = Qmdhcjdbsdjss
  * Base+tokenURI
  * changeBaseURI: in case gateways out of function
@@ -32,32 +34,12 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
         uint256[] comments;
         // edition date & bool with time duration
     }
-    /*
-  Articles private _articles;
-  Reviews private _reviews; // no reviews on comments expect we do a function on purpose (onlyOwner and once)
-
-  constructor(address articlesContract){
-    _articles = Articles(articlesContract);
-  }
-
-
-
-  function x() public {
-    _articles.fillCommentArrays(articleID, tokenID);
-    /*
-    Articles.sol
-    _articles[articleID].comments.push(tokenID)
-
-    if(isComment){
-      _comments[targetID] = tokenID
-    }
-    
-  }
-  */
 
     // storage & event
     Articles private _articles;
     Reviews private _reviews;
+    Users private _users;
+
     Counters.Counter private _commentID;
     mapping(uint256 => Comment) private _comment;
 
@@ -67,14 +49,22 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
     constructor(
         address owner_,
         address articlesContract,
-        address reviewsContract
+        address reviewsContract,
+        address usersContract
     ) Users(owner_) ERC721("Comment", "COM") {
         _articles = Articles(articlesContract);
         _reviews = Reviews(reviewsContract);
+        _users = Users(usersContract);
         // baseURI override and public
     }
 
     // overrides
+    modifier onlyUser() override {
+        uint256 userID = _users.profileID(msg.sender);
+        require(_users.userStatus(userID) == WhiteList.Approved, "Users: you must be approved to use this feature.");
+        _;
+    }
+
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -145,5 +135,9 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
     // is useful? enumerable? two way to find the list?
     function nbOfComment() public view returns (uint256) {
         return _commentID.current();
+    }
+
+    function testUser(address account) public view returns (uint256) {
+        return _users.profileID(account);
     }
 }

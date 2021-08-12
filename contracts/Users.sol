@@ -73,6 +73,12 @@ contract Users is Ownable {
     event Banned(uint256 indexed userID);
 
     /**
+     * @dev Emitted when an user use this function to recover his user profile
+     *
+     * */
+    event ProfileRecovered(address indexed account, uint256 userID);
+
+    /**
      * @notice  Constructor
      * @dev     The parameter {owner_} is set in case the deployer is different from the owner (see Ownable.sol)
      * */
@@ -84,11 +90,11 @@ contract Users is Ownable {
      * @notice  Modifiers
      * @dev     This prevent a Pending or Not Approved user to use a function
      *
-     *          This modifier is set here to be used in other contracts
+     *          This modifier is set to {virtual} to be overrided and used in other contracts
      * */
-    modifier onlyUser() {
+    modifier onlyUser() virtual {
         uint256 userID = _userIdPointer[msg.sender];
-        require(_user[userID].status == WhiteList.Approved, "Users: you be approved to use this feature.");
+        require(_user[userID].status == WhiteList.Approved, "Users: you must be approved to use this feature.");
         _;
     }
 
@@ -124,7 +130,7 @@ contract Users is Ownable {
      * @param userID_   user ID is specify to get access to the corresponding Struct User
      */
     function acceptUser(uint256 userID_) public onlyOwner returns (bool) {
-        require(_user[userID_].status == WhiteList.Pending, "Users: User is not registered");
+        require(_user[userID_].status == WhiteList.Pending, "Users: user is not registered or already approved");
         _user[userID_].status = WhiteList.Approved;
         emit Approved(userID_);
         return true;
@@ -138,7 +144,7 @@ contract Users is Ownable {
      * @param userID_   user ID is specify to get access to the corresponding Struct User
      */
     function banUser(uint256 userID_) public onlyOwner returns (bool) {
-        require(_user[userID_].status != WhiteList.NotApproved, "Users: User is not registered or already banned");
+        require(_user[userID_].status != WhiteList.NotApproved, "Users: user is not registered or already banned");
         _user[userID_].status = WhiteList.NotApproved;
         emit Banned(userID_);
         return true;
@@ -181,10 +187,11 @@ contract Users is Ownable {
      *                      can be read. So by using a script everyone can add the ID and the hashed password bytes
      *                      to recover the profile of an user. This will be solved in the next version of this contract.
      */
-    function forgetWallet(bytes32 password, uint256 userID) public returns (bool) {
-        require(password == _user[userID].hashedPassword, "Users: Incorrect password");
+    function forgotWallet(bytes32 password, uint256 userID) public returns (bool) {
+        require(password == _user[userID].hashedPassword, "Users: incorrect password");
         _user[userID].walletList.push(msg.sender);
         _userIdPointer[msg.sender] = userID;
+        emit ProfileRecovered(msg.sender, userID);
         return true;
     }
 
@@ -202,7 +209,7 @@ contract Users is Ownable {
      *
      *  @param userID user's profile ID
      * */
-    function statusByUserID(uint256 userID) public view returns (WhiteList) {
+    function userStatus(uint256 userID) public view returns (WhiteList) {
         return _user[userID].status;
     }
 
@@ -211,7 +218,7 @@ contract Users is Ownable {
      *
      *  @param userID user's profile ID
      * */
-    function profileByUserID(uint256 userID) public view returns (string memory) {
+    function userProfile(uint256 userID) public view returns (string memory) {
         return _user[userID].profileCID;
     }
 
@@ -220,7 +227,7 @@ contract Users is Ownable {
      *
      *  @param userID user's profile ID
      * */
-    function nbOfWalletByUserID(uint256 userID) public view returns (uint256) {
+    function userNbOfWallet(uint256 userID) public view returns (uint256) {
         return _user[userID].walletList.length;
     }
 
@@ -229,7 +236,7 @@ contract Users is Ownable {
      *
      *  @param userID user's profile ID
      * */
-    function walletListByUserID(uint256 userID) public view returns (address[] memory) {
+    function userWalletList(uint256 userID) public view returns (address[] memory) {
         return _user[userID].walletList;
     }
 }
