@@ -248,21 +248,3 @@ describe('Comments', function () {
     it('display comment list of a review')
   })
 })
-
-/*
-    - token transfer (prevent transfer between users)
-    - PUBLISH:
-       - mint token (see wallet)
-       - tokenURI
-       - Struct(author, id, coAuthor,abstract&contentCID)
-       - prevent if not user (need to import Users?)
-       - event Publish
-       - counters
-    - BAN_ARTICLE:
-        - change struct
-        - onlyOwner (revert)
-        - event ArticleBanned
-    - CONNEXION:    execpt articles
-        - fill the right arrays
-        - test scenario(Article published => review on it => comment on this review)
-    */

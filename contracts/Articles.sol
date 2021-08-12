@@ -7,11 +7,32 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./Users.sol";
 
+/**
+ * @title   Article NFT
+ * @author  Sarah, Henry & Raphael
+ *
+ * @notice  Each NFT of this contract are articles.
+ * @dev     Important features:
+ *              - NFT are not transferable
+ *              - Metadata are stored on IPFS
+ *              - BaseURI (gateway) + TokenURI (CID)
+ *
+ */
+
 contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
     using Counters for Counters.Counter;
 
-    // enum?
-
+    /**
+     * @dev Struct Article contains the following keys:
+     *          - {id}: set by Counters.sol
+     *          - {author}: address of the owner
+     *          - {coAuthor}: array of co author's address
+     *          - {contentBanned}: status of the article
+     *          - {...CID}: string of ipfs CID => in bytes?
+     *          - {comments}: array of linked comments' id
+     *          - {reviews}: array of linked reviews' id
+     * NOTE comments[] & reviews[] are filled in contracts of the same name
+     * */
     struct Article {
         uint256 id;
         address author;
@@ -30,10 +51,22 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
 
     mapping(uint256 => Article) private _article;
 
-    //event
+    /**
+     * @notice              Events
+     * @dev                 Emitted when an user publish an article
+     * @param author        address of the publisher
+     * @param articleID     article's token ID
+     * @param abstractCID   ipfs CID of the abstract
+     * */
     event Published(address indexed author, uint256 articleID, string abstractCID);
     event ArticleBanned(uint256 indexed articleID);
 
+    /**
+     * @notice              Constructor
+     * @dev                 The parameter {owner_} is set in case the deployer is different from the owner (see Users.sol)
+     * @param owner_        address of the owner (see Users.sol)
+     * @param usersContract address of Users.sol
+     * */
     constructor(address owner_, address usersContract) Users(owner_) ERC721("Article", "ART") {
         _users = Users(usersContract);
     }
@@ -41,7 +74,7 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
     // overrides
     modifier onlyUser() override {
         uint256 userID = _users.profileID(msg.sender);
-        require(_users.userStatus(userID) == WhiteList.Approved, "Users: you must be approved to use this feature.");
+        require(_users.userStatus(userID) == WhiteList.Approved, "Articles: you must be approved to use this feature.");
         _;
     }
 
@@ -116,5 +149,14 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
 
     function nbOfArticles() public view returns (uint256) {
         return _articleID.current();
+    }
+
+    function getUserID(address account) public view returns (uint256) {
+        return _users.profileID(account);
+    }
+
+    function userStatusX(address account) public view returns (WhiteList) {
+        uint256 id = getUserID(account);
+        return _users.userStatus(id);
     }
 }

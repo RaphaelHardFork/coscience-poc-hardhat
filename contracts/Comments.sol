@@ -61,7 +61,7 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
     // overrides
     modifier onlyUser() override {
         uint256 userID = _users.profileID(msg.sender);
-        require(_users.userStatus(userID) == WhiteList.Approved, "Users: you must be approved to use this feature.");
+        require(_users.userStatus(userID) == WhiteList.Approved, "Comments: you must be approved to use this feature.");
         _;
     }
 
