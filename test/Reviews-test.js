@@ -33,7 +33,7 @@ describe('Reviews', function () {
     await users.deployed()
 
     Articles = await ethers.getContractFactory('Articles')
-    articles = await Articles.connect(dev).deploy(owner.address)
+    articles = await Articles.connect(dev).deploy(owner.address, users.address)
     await articles.deployed()
 
     Reviews = await ethers.getContractFactory(CONTRACT_NAME)
@@ -58,7 +58,6 @@ describe('Reviews', function () {
   })
 
   describe('post', function () {
-    beforeEach()
     it('should emit when you post a review', async function () {
       await expect(reviews.connect(wallet1).post(CID, 1))
         .to.emit(reviews, 'Posted')

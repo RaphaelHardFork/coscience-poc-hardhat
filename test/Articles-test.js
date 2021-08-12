@@ -27,6 +27,8 @@ const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
 describe('Articles', function () {
   let Articles,
     articles,
+    Users,
+    users,
     dev,
     owner,
     wallet1,
@@ -39,8 +41,12 @@ describe('Articles', function () {
   beforeEach(async function () {
     ;[dev, owner, wallet1, wallet2, wallet3, wallet4, wallet5, wallet6] =
       await ethers.getSigners()
+    Users = await ethers.getContractFactory('Users')
+    users = await Users.connect(dev).deploy(owner.address)
+    await users.deployed()
+
     Articles = await ethers.getContractFactory(CONTRACT_NAME)
-    articles = await Articles.connect(dev).deploy(owner.address)
+    articles = await Articles.connect(dev).deploy(owner.address, users.address)
     await articles.deployed()
   })
 
@@ -61,7 +67,7 @@ describe('Articles', function () {
   describe('publish', function () {
     let publishCall
     beforeEach(async function () {
-      publishCall = await articles.connect(wallet1).publish()
+      // publishCall = await articles.connect(wallet1).publish()
     })
   })
 
