@@ -64,7 +64,7 @@ contract Reviews is ERC721Enumerable, ERC721URIStorage, Users {
         uint256 tokenId
     ) internal virtual override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
-        require(from == address(0) || to == address(0), "Review: you cannot transfer this token"); // IMPORTANT TEST
+        require(from == address(0) || to == address(0), "Reviews: reviews token are not transferable"); // IMPORTANT TEST
     }
 
     function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {

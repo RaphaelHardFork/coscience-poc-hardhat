@@ -8,23 +8,46 @@ const ADDRESS_ZERO = ethers.constants.AddressZero
 const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
 const HASHED_PASSWORD = ethers.utils.id('password')
 
-/*
-- token transfer (prevent transfer between users)
-- PUBLISH:
-   - mint token (see wallet)
-   - tokenURI
-   - Struct(author, id, coAuthor,abstract&contentCID)
-   - prevent if not user (need to import Users?)
-   - event Publish
-   - counters
-- BAN_ARTICLE:
-    - change struct
-    - onlyOwner (revert)
-    - event ArticleBanned
-- CONNEXION:    execpt articles
-    - fill the right arrays
-    - test scenario(Article published => review on it => comment on this review)
-*/
+// UTILS
+// Pure function to create a JS object of the article list
+const jsArticleList = async (articles, listOfId) => {
+  const articleList = []
+  let tab = []
+  if (listOfId === undefined) {
+    const nb = await articles.nbOfArticles()
+    for (let i = 1; i <= nb; i++) {
+      tab.push(i)
+    }
+  } else {
+    tab = listOfId
+  }
+
+  for (const i of tab) {
+    const a = await articles.articleInfo(i)
+    articleList.push({
+      id: a.id.toString(),
+      author: a.author,
+      coAuthor: a.coAuthor,
+      contentBanned: a.contentBanned,
+      abstractCID: a.abstractCID,
+      contentCID: a.contentCID,
+      comments: a.comments,
+      reviews: a.reviews,
+    })
+  }
+  return articleList
+}
+
+const userArticlesIds = async (articles, userAddress) => {
+  const userArticlesBalance = await articles.balanceOf(userAddress)
+  const userArticlesList = []
+  for (let i = 0; i < userArticlesBalance.toNumber(); i++) {
+    const id = await articles.tokenOfOwnerByIndex(userAddress, i)
+    userArticlesList.push(id.toNumber())
+  }
+  return userArticlesList
+}
+
 describe('Articles', function () {
   let Users,
     users,
@@ -34,28 +57,13 @@ describe('Articles', function () {
     owner,
     article1Author,
     article2Author,
-    comment1Author,
-    comment2Author,
-    review1Author,
-    review2Author,
     wallet1,
     wallet2,
     wallet3
 
   beforeEach(async function () {
-    ;[
-      dev,
-      owner,
-      article1Author,
-      article2Author,
-      comment1Author,
-      comment2Author,
-      review1Author,
-      review2Author,
-      wallet1,
-      wallet2,
-      wallet3,
-    ] = await ethers.getSigners()
+    ;[dev, owner, article1Author, article2Author, wallet1, wallet2, wallet3] =
+      await ethers.getSigners()
 
     Users = await ethers.getContractFactory('Users')
     users = await Users.connect(dev).deploy(owner.address)
@@ -64,25 +72,11 @@ describe('Articles', function () {
     Articles = await ethers.getContractFactory(CONTRACT_NAME)
     articles = await Articles.connect(dev).deploy(owner.address, users.address)
     await articles.deployed()
-
-    // register + accept
-    await users.connect(article1Author).register(HASHED_PASSWORD, CID)
-    await users.connect(owner).acceptUser(1)
   })
 
   describe('Deployment', function () {
     it('should asign owner as the owner', async function () {
       expect(await articles.owner()).to.be.equal(owner.address)
-    })
-
-    it('should approve article1Author', async function () {
-      expect(await users.userStatus(1), 'status').to.equal(2)
-      const wallets = await users.userWalletList(1)
-      expect(wallets[0], 'address').to.equal(article1Author.address)
-    })
-
-    it('should return right value', async function () {
-      expect(await articles.userStatusX(article1Author.address)).to.equal(2)
     })
   })
 
@@ -90,15 +84,17 @@ describe('Articles', function () {
     let publishCall, coAuthor
 
     beforeEach(async function () {
+      // register + accept
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(owner).acceptUser(1)
       coAuthor = [wallet1.address, wallet2.address, wallet3.address]
       publishCall = await articles
         .connect(article1Author)
         .publish(coAuthor, CID, CID)
-      await articles.connect(article2Author).publish(coAuthor, CID, CID)
     })
 
     it('should mint a NFT to the publisher', async function () {
-      expect(await articles.totalSupply(), 'total supply').to.equal(2)
+      expect(await articles.totalSupply(), 'total supply').to.equal(1)
       expect(await articles.ownerOf(1), 'owner of').to.equal(
         article1Author.address
       )
@@ -130,30 +126,78 @@ describe('Articles', function () {
     })
   })
 
-  // describe('_beforeTokenTransfer', function () {
-  //   it('should not allow transfer between users', async function () {
-  //     await expect(articles.transfer(wallet2.address)).to.reject(
-  //       'Transfer between users is not allowed.'
-  //     )
-  //   })
-  // })
-
-  describe('publish', function () {
-    let publishCall
+  describe('NFT behavior', async function () {
     beforeEach(async function () {
-      // publishCall = await articles.connect(wallet1).publish()
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(owner).acceptUser(1)
+      const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+    })
+
+    it('should prevent the token transfert', async function () {
+      await expect(
+        articles
+          .connect(article1Author)
+          .transferFrom(article1Author.address, wallet1.address, 1)
+      ).to.be.revertedWith('Articles: articles tokens are not transferable.')
     })
   })
 
-  //   describe('banArticle', function () {
-  //     let banArticleCall
-  //     beforeEach(async function () {
+  describe('ban an article', async function () {
+    let banCall
+    beforeEach(async function () {
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(owner).acceptUser(1)
+      const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+      banCall = await articles.connect(owner).banArticle(1)
+    })
 
-  //     })
-  //     it('should not allow to ban an article if not the owner', async function () {
-  //       await expect(articles.banArticle(CID)).to.reject(
-  //         'Only the owner can ban an article.'
-  //       )
-  //     })
-  //   })
+    it('should change the struct of the article', async function () {
+      const struct = await articles.articleInfo(1)
+      expect(struct.contentBanned).to.equal(true)
+    })
+
+    it('should emit an ArticleBanned event', async function () {
+      expect(banCall).to.emit(articles, 'ArticleBanned').withArgs(1)
+    })
+
+    it('should revert if not owner attempt to ban article', async function () {
+      await expect(articles.connect(wallet2).banArticle(1)).to.be.revertedWith(
+        'Ownable:'
+      )
+    })
+  })
+
+  describe('display articles', function () {
+    beforeEach(async function () {
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(owner).acceptUser(1)
+      await users.connect(article2Author).register(HASHED_PASSWORD, CID)
+      await users.connect(owner).acceptUser(2)
+
+      const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+      await articles.connect(article2Author).publish(coAuthor, CID, CID)
+      await articles
+        .connect(article2Author)
+        .publish(coAuthor.slice(0, 1), CID, CID)
+      await articles
+        .connect(article1Author)
+        .publish(coAuthor.slice(0, 2), CID, CID)
+      await articles
+        .connect(article1Author)
+        .publish(coAuthor.slice(1, 2), CID, CID)
+    })
+
+    it('display article list', async function () {
+      // const obj = await jsArticleList(articles)
+      // console.log(obj)
+    })
+    it('display an user article list', async function () {
+      // const listOfId = await userArticlesIds(articles, article1Author.address)
+      // const obj = await jsArticleList(articles, listOfId)
+      // console.log(obj)
+    })
+  })
 })

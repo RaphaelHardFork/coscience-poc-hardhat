@@ -74,7 +74,7 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
     // overrides
     modifier onlyUser() override {
         uint256 userID = _users.profileID(msg.sender);
-        require(_users.userStatus(userID) == WhiteList.Approved, "Articles: you must be approved to use this feature.");
+        require(_users.userStatus(userID) == WhiteList.Approved, "Users: you must be approved to use this feature.");
         _;
     }
 
@@ -84,7 +84,7 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
         uint256 tokenId
     ) internal virtual override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
-        require(from == address(0) || to == address(0), "Article: you cannot transfer this token"); // IMPORTANT TEST
+        require(from == address(0) || to == address(0), "Articles: articles tokens are not transferable."); // IMPORTANT TEST
     }
 
     function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
@@ -109,7 +109,7 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
         address[] memory coAuthor,
         string memory abstractCID,
         string memory contentCID
-    ) public returns (uint256) {
+    ) public onlyUser returns (uint256) {
         _articleID.increment();
         uint256 articleID = _articleID.current();
         _safeMint(msg.sender, articleID);
@@ -149,14 +149,5 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
 
     function nbOfArticles() public view returns (uint256) {
         return _articleID.current();
-    }
-
-    function getUserID(address account) public view returns (uint256) {
-        return _users.profileID(account);
-    }
-
-    function userStatusX(address account) public view returns (WhiteList) {
-        uint256 id = getUserID(account);
-        return _users.userStatus(id);
     }
 }

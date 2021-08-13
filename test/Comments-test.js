@@ -152,6 +152,7 @@ describe('Comments', function () {
     await comments.deployed()
 
     // use contracts to create a context
+    /*
     // users registration
     const userPending = [
       article1Author,
@@ -179,11 +180,29 @@ describe('Comments', function () {
     // review post
     await reviews.connect(review2Author).post(CID, 1) // on article 1
     await reviews.connect(review1Author).post(CID, 2) // on article 2
+    */
+  })
+
+  describe('Deployment', function () {
+    it('should deploy correctly the contract', async function () {
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(owner).acceptUser(1)
+      expect(await comments.testUser(article1Author.address)).to.equal(1)
+    })
   })
 
   describe('Post a comment on article', function () {
     let postCall
     beforeEach(async function () {
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(owner).acceptUser(1)
+      await users.connect(comment1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(owner).acceptUser(2)
+
+      await articles
+        .connect(article1Author)
+        .publish([wallet1.address, wallet2.address, wallet3.address], CID, CID)
+
       postCall = await comments
         .connect(comment1Author)
         .post(CID, articles.address, 1) // on ARTICLE 1
@@ -213,6 +232,8 @@ describe('Comments', function () {
       expect(struct.comments[0]).to.equal(1)
     })
 
+    it('should fill the array of the corresponding review')
+
     it('should emit a Posted event', async function () {
       expect(postCall)
         .to.emit(comments, 'Posted')
@@ -222,12 +243,19 @@ describe('Comments', function () {
     it('should revert if user is not registered', async function () {
       await expect(
         comments.connect(wallet3).post(CID, articles.address, 1)
-      ).to.be.revertedWith('Users:')
+      ).to.be.revertedWith('Comments:')
     })
   })
-
+  /*
+  })
+*/
   describe('display comments', function () {
     beforeEach(async function () {
+      await users.connect(comment1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(comment2Author).register(HASHED_PASSWORD, CID)
+      await users.connect(owner).acceptUser(1)
+      await users.connect(owner).acceptUser(2)
+
       await comments.connect(comment1Author).post(CID, articles.address, 1) // on ARTICLE 1
       await comments.connect(comment2Author).post(CID, articles.address, 1) // on ARTICLE 1
       await comments.connect(comment1Author).post(CID, articles.address, 2) // on ARTICLE 2
