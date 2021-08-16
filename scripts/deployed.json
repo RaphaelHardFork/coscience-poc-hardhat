@@ -1,0 +1,14 @@
+{
+  "Users": {
+    "rinkeby": { "address": "0xB53a11f8f9Dcb5379Dd3fE7AD1649727b18Ba491" }
+  },
+  "Articles": {
+    "rinkeby": { "address": "0xc4D31789081B2EB0f1e65A3Cdf87AF17f1408817" }
+  },
+  "Reviews": {
+    "rinkeby": { "address": "0xd17ffCa14121cbb08d8a671751b847287C31B4D1" }
+  },
+  "Comments": {
+    "rinkeby": { "address": "0x175bAeF1584b9CBAc909111668ed769937443F81" }
+  }
+}
