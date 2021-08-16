@@ -230,8 +230,8 @@ describe('Reviews', function () {
     })
 
     it('display review list', async function () {
-      // const obj = await jsReviewList(articles, reviews)
-      // console.log(obj)
+      const obj = await jsReviewList(articles, reviews)
+      console.log(obj)
     })
     it('display an user review list')
   })

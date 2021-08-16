@@ -42,10 +42,10 @@ const userArticlesIds = async (articles, userAddress) => {
   const userArticlesBalance = await articles.balanceOf(userAddress)
   const userArticlesList = []
   for (let i = 0; i < userArticlesBalance.toNumber(); i++) {
-    const id = await articles.tokenOfOwnerByIndex(userAddress, i)
+    const id = await articles.tokenOfOwnerByIndex(userAddress, i) // ERC721Enumerable.sol
     userArticlesList.push(id.toNumber())
   }
-  return userArticlesList
+  return userArticlesList // [2,6,8,10]
 }
 
 describe('Articles', function () {

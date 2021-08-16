@@ -43,6 +43,7 @@ const jsCommentList = async (comments, articles, reviews, listOfId) => {
       const r = await reviews.reviewInfo(c.targetID.toNumber())
       const a = await articles.articleInfo(r.targetID.toNumber())
       const comments = r.comments.map((id) => id.toNumber())
+      console.log(r)
       on = {
         id: r.id.toString(),
         author: r.author,
@@ -203,13 +204,17 @@ describe('Comments', function () {
         .connect(article1Author)
         .publish([wallet1.address, wallet2.address, wallet3.address], CID, CID)
 
+      await reviews.connect(article1Author).post(CID, 1)
+
       postCall = await comments
         .connect(comment1Author)
         .post(CID, articles.address, 1) // on ARTICLE 1
+
+      await comments.connect(comment1Author).post(CID, reviews.address, 1)
     })
 
     it('should mint a NFT to the publisher', async function () {
-      expect(await comments.totalSupply(), 'total supply').to.equal(1)
+      expect(await comments.totalSupply(), 'total supply').to.equal(2)
       expect(await comments.ownerOf(1), 'owner of').to.equal(
         comment1Author.address
       )
@@ -232,7 +237,10 @@ describe('Comments', function () {
       expect(struct.comments[0]).to.equal(1)
     })
 
-    it('should fill the array of the corresponding review')
+    it('should fill the array of the corresponding review', async function () {
+      const struct = await reviews.reviewInfo(1)
+      expect(struct.comments[0]).to.equal(2)
+    })
 
     it('should emit a Posted event', async function () {
       expect(postCall)
@@ -256,6 +264,8 @@ describe('Comments', function () {
       await users.connect(owner).acceptUser(1)
       await users.connect(owner).acceptUser(2)
 
+      // publish article & review !
+
       await comments.connect(comment1Author).post(CID, articles.address, 1) // on ARTICLE 1
       await comments.connect(comment2Author).post(CID, articles.address, 1) // on ARTICLE 1
       await comments.connect(comment1Author).post(CID, articles.address, 2) // on ARTICLE 2
@@ -266,13 +276,12 @@ describe('Comments', function () {
     it('display comments list', async function () {
       // const obj = await jsCommentList(comments, articles, reviews) // create a JS object
       // (on comment 4) review 1 => article 1
-      // console.log(obj[3].on)
+      // console.log(obj)
     })
     it('display comment list of one user', async function () {
       // const listOfId = await userCommentsIds(comments, comment1Author.address) // create list of user's tokenID
       // const obj = await jsCommentList(comments, articles, reviews, listOfId) // create a JS object
+      // console.log(obj)
     })
-    it('display comment list of an article')
-    it('display comment list of a review')
   })
 })
