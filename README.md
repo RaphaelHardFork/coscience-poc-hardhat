@@ -2,6 +2,7 @@
 
 ## Architecture
 
+Need owner auth functions
 ![architecture](./architecture.png)
 
 ## Comment / Review [NFT]
