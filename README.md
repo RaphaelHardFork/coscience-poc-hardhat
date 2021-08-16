@@ -1,5 +1,9 @@
 # Data architecture
 
+## Architecture
+
+![architecture](./architecture.png)
+
 ## Comment / Review [NFT]
 
 - Author (address) = owner
