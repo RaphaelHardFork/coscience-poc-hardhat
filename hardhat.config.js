@@ -1,6 +1,7 @@
 require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-solhint')
 require('hardhat-docgen')
+require('hardhat-gas-reporter')
 require('dotenv').config()
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID
@@ -10,7 +11,13 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: '0.8.4',
+  solidity: '0.8.7',
+  settings: {
+    optimizer: {
+      enabled: true,
+      runs: 200,
+    },
+  },
   networks: {
     mainnet: {
       url: `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
@@ -37,5 +44,9 @@ module.exports = {
     path: './docs',
     clear: true,
     runOnCompile: false,
+  },
+  gasReporter: {
+    currency: 'EUR',
+    gasPrice: 21,
   },
 }

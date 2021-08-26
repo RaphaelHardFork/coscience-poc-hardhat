@@ -2,11 +2,20 @@
 /* eslint-disable no-unused-vars */
 const { expect } = require('chai')
 const { ethers } = require('hardhat')
+const UtilsCID = require('cids')
+const { BigNumber } = require('ethers')
 
 const CONTRACT_NAME = 'Articles'
 const ADDRESS_ZERO = ethers.constants.AddressZero
-const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
 const HASHED_PASSWORD = ethers.utils.id('password')
+// create the CID
+const firstCid = 'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi'
+const cid = new UtilsCID(
+  'bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi'
+)
+const cidToHexString = cid.toString('base16')
+const CIDFAKE = BigInt('0x' + cidToHexString, 16) // big Number
+const CID = BigNumber.from('0xf01701220c3c4733ec8affd06cf9e9ff50ffc')
 
 // UTILS
 // Pure function to create a JS object of the article list
@@ -85,12 +94,24 @@ describe('Articles', function () {
 
     beforeEach(async function () {
       // register + accept
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
+      await users
+        .connect(article1Author)
+        .register(HASHED_PASSWORD, HASHED_PASSWORD, HASHED_PASSWORD)
       await users.connect(owner).acceptUser(1)
       coAuthor = [wallet1.address, wallet2.address, wallet3.address]
       publishCall = await articles
         .connect(article1Author)
         .publish(coAuthor, CID, CID)
+    })
+
+    it('should give back the CID', async function () {
+      const struct = await articles.articleInfo(1)
+      const hexString = struct.abstractCID.toHexString()
+      const bigInt = struct.abstractCID.toBigInt()
+      console.log(bigInt)
+      console.log(hexString)
+      const cid = new UtilsCID(hexString).toString('base32')
+      expect(cid).to.equal(firstCid)
     })
 
     it('should mint a NFT to the publisher', async function () {

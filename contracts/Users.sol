@@ -42,7 +42,8 @@ contract Users is Ownable {
         WhiteList status;
         uint256 id;
         address[] walletList;
-        string profileCID;
+        bytes32 nameCID;
+        bytes32 profileCID;
     }
 
     Counters.Counter private _userID;
@@ -60,6 +61,8 @@ contract Users is Ownable {
      *          At this moment the user still have the Pending status in his account
      * */
     event Registered(address indexed user, uint256 userID);
+
+    event Edited(address indexed user, uint256 userID, bytes32 profileCID);
 
     /**
      * @dev Emitted when an user is approved by the owner of the contract
@@ -107,18 +110,32 @@ contract Users is Ownable {
      * @param hashedPassword_   the hash of the user's password (done in the front-end part)
      * @param profileCID_       the CID hash allowing to get the user's profile informations
      */
-    function register(bytes32 hashedPassword_, string memory profileCID_) public returns (bool) {
+    function register(
+        bytes32 hashedPassword_,
+        bytes32 profileCID_,
+        bytes32 nameCID_
+    ) public returns (bool) {
+        require(_userIdPointer[msg.sender] == 0, "Users: this wallet is already registered.");
         _userID.increment();
         uint256 userID = _userID.current();
         User storage u = _user[userID];
         u.hashedPassword = hashedPassword_;
         u.id = userID;
         u.status = WhiteList.Pending;
+        u.nameCID = nameCID_;
         u.profileCID = profileCID_;
         u.walletList.push(msg.sender);
         _userIdPointer[msg.sender] = userID;
 
         emit Registered(msg.sender, userID);
+        return true;
+    }
+
+    function editProfile(bytes32 profileCID_) public onlyUser returns (bool) {
+        uint256 userID = _userIdPointer[msg.sender];
+        _user[userID].profileCID = profileCID_;
+
+        emit Edited(msg.sender, userID, profileCID_);
         return true;
     }
 
@@ -159,6 +176,7 @@ contract Users is Ownable {
      * @param newAddress    the new wallet address specified by the user
      */
     function addWallet(address newAddress) public onlyUser returns (bool) {
+        require(_userIdPointer[newAddress] == 0, "Users: this wallet is already registered.");
         uint256 userID = _userIdPointer[msg.sender];
         _user[userID].walletList.push(newAddress);
         _userIdPointer[newAddress] = userID;
@@ -213,12 +231,16 @@ contract Users is Ownable {
         return _user[userID].status;
     }
 
+    function userName(uint256 userID) public view returns (bytes32) {
+        return _user[userID].nameCID;
+    }
+
     /**
      *  @dev    Return the CID pointer to user's informations with the ID
      *
      *  @param userID user's profile ID
      * */
-    function userProfile(uint256 userID) public view returns (string memory) {
+    function userProfile(uint256 userID) public view returns (bytes32) {
         return _user[userID].profileCID;
     }
 
@@ -238,5 +260,9 @@ contract Users is Ownable {
      * */
     function userWalletList(uint256 userID) public view returns (address[] memory) {
         return _user[userID].walletList;
+    }
+
+    function nbOfUsers() public view returns (uint256) {
+        return _userID.current();
     }
 }

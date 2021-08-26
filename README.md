@@ -5,6 +5,11 @@
 Need owner auth functions
 ![architecture](./architecture.png)
 
+## TODO
+
+- governance
+- tags in bytes like ACCESS_CONTROL
+
 ## Comment / Review [NFT]
 
 - Author (address) = owner

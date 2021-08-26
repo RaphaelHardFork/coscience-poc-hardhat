@@ -25,6 +25,8 @@
   },
   "dependencies": {
     "@nomiclabs/hardhat-solhint": "^2.0.0",
-    "@openzeppelin/contracts": "^4.1.0"
+    "@openzeppelin/contracts": "^4.1.0",
+    "cids": "^1.1.8",
+    "hardhat-gas-reporter": "^1.0.4"
   }
 }
