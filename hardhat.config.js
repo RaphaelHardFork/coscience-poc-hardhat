@@ -2,6 +2,7 @@ require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-solhint')
 require('hardhat-docgen')
 require('hardhat-gas-reporter')
+require('hardhat-contract-sizer')
 require('dotenv').config()
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID
@@ -11,7 +12,7 @@ const PRIVATE_KEY = process.env.PRIVATE_KEY
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: '0.8.7',
+  solidity: '0.8.4',
   settings: {
     optimizer: {
       enabled: true,
@@ -48,5 +49,10 @@ module.exports = {
   gasReporter: {
     currency: 'EUR',
     gasPrice: 21,
+  },
+  contractSizer: {
+    alphaSort: true,
+    runOnCompile: true,
+    disambiguatePaths: false,
   },
 }

@@ -19,7 +19,7 @@ import "./Users.sol";
  *
  */
 
-contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
+contract Articles is ERC721URIStorage, ERC721Enumerable, Users {
     using Counters for Counters.Counter;
 
     /**
@@ -38,8 +38,8 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
         address author;
         address[] coAuthor;
         bool contentBanned;
-        string abstractCID;
-        string contentCID;
+        // uint256[2] abstractCID;
+        // uint256[2] contentCID;
         uint256[] comments;
         uint256[] reviews;
         //metrics
@@ -59,6 +59,7 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
      * @param abstractCID   ipfs CID of the abstract
      * */
     event Published(address indexed author, uint256 articleID, string abstractCID);
+
     event ArticleBanned(uint256 indexed articleID);
 
     /**
@@ -105,21 +106,23 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
         return super.supportsInterface(interfaceId);
     }
 
-    function publish(
-        address[] memory coAuthor,
-        string memory abstractCID,
-        string memory contentCID
-    ) public onlyUser returns (uint256) {
+    function publish(address[] memory coAuthor, string memory abstractCID)
+        public
+        //uint256[2] memory abstractCID
+        // uint256[2] memory contentCID
+        onlyUser
+        returns (uint256)
+    {
         _articleID.increment();
         uint256 articleID = _articleID.current();
         _safeMint(msg.sender, articleID);
-        _setTokenURI(articleID, "https://ipfs.io/ifps/CID.json");
+        _setTokenURI(articleID, abstractCID);
         Article storage a = _article[articleID];
         a.author = msg.sender;
         a.id = articleID;
         a.coAuthor = coAuthor;
-        a.abstractCID = abstractCID;
-        a.contentCID = contentCID;
+        // a.abstractCID = abstractCID;
+        // a.contentCID = contentCID;
 
         emit Published(msg.sender, articleID, abstractCID);
         return articleID;
