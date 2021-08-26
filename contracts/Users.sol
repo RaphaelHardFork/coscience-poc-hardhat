@@ -42,8 +42,8 @@ contract Users is Ownable {
         WhiteList status;
         uint256 id;
         address[] walletList;
-        bytes32 nameCID;
-        bytes32 profileCID;
+        string nameCID;
+        string profileCID;
     }
 
     Counters.Counter private _userID;
@@ -62,7 +62,7 @@ contract Users is Ownable {
      * */
     event Registered(address indexed user, uint256 userID);
 
-    event Edited(address indexed user, uint256 userID, bytes32 profileCID);
+    event Edited(address indexed user, uint256 userID, string profileCID);
 
     /**
      * @dev Emitted when an user is approved by the owner of the contract
@@ -112,8 +112,8 @@ contract Users is Ownable {
      */
     function register(
         bytes32 hashedPassword_,
-        bytes32 profileCID_,
-        bytes32 nameCID_
+        string memory profileCID_,
+        string memory nameCID_
     ) public returns (bool) {
         require(_userIdPointer[msg.sender] == 0, "Users: this wallet is already registered.");
         _userID.increment();
@@ -131,7 +131,7 @@ contract Users is Ownable {
         return true;
     }
 
-    function editProfile(bytes32 profileCID_) public onlyUser returns (bool) {
+    function editProfile(string memory profileCID_) public onlyUser returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         _user[userID].profileCID = profileCID_;
 
@@ -231,7 +231,7 @@ contract Users is Ownable {
         return _user[userID].status;
     }
 
-    function userName(uint256 userID) public view returns (bytes32) {
+    function userName(uint256 userID) public view returns (string memory) {
         return _user[userID].nameCID;
     }
 
@@ -240,7 +240,7 @@ contract Users is Ownable {
      *
      *  @param userID user's profile ID
      * */
-    function userProfile(uint256 userID) public view returns (bytes32) {
+    function userProfile(uint256 userID) public view returns (string memory) {
         return _user[userID].profileCID;
     }
 

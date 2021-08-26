@@ -38,8 +38,8 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
         address author;
         address[] coAuthor;
         bool contentBanned;
-        uint256 abstractCID;
-        uint256 contentCID;
+        string abstractCID;
+        string contentCID;
         uint256[] comments;
         uint256[] reviews;
         //metrics
@@ -58,7 +58,7 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
      * @param articleID     article's token ID
      * @param abstractCID   ipfs CID of the abstract
      * */
-    event Published(address indexed author, uint256 articleID, uint256 abstractCID);
+    event Published(address indexed author, uint256 articleID, string abstractCID);
     event ArticleBanned(uint256 indexed articleID);
 
     /**
@@ -107,8 +107,8 @@ contract Articles is ERC721Enumerable, ERC721URIStorage, Users {
 
     function publish(
         address[] memory coAuthor,
-        uint256 abstractCID,
-        uint256 contentCID
+        string memory abstractCID,
+        string memory contentCID
     ) public onlyUser returns (uint256) {
         _articleID.increment();
         uint256 articleID = _articleID.current();

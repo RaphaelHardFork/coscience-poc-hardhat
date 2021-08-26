@@ -27,7 +27,7 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
     struct Comment {
         uint256 id;
         address author;
-        bytes32 contentCID;
+        string contentCID;
         bool contentBanned;
         address target;
         uint256 targetID;
@@ -94,7 +94,7 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
 
     // post a comment
     function post(
-        bytes32 contentCID,
+        string memory contentCID,
         address target,
         uint256 targetID
     ) public onlyUser returns (uint256) {

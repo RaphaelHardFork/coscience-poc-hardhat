@@ -24,7 +24,7 @@ contract Reviews is ERC721Enumerable, ERC721URIStorage, Users {
     struct Review {
         uint256 id;
         address author;
-        bytes32 contentCID;
+        string contentCID;
         bool contentBanned;
         uint256 targetID;
         uint256[] comments;
@@ -86,7 +86,7 @@ contract Reviews is ERC721Enumerable, ERC721URIStorage, Users {
     }
 
     // post a review
-    function post(bytes32 contentCID, uint256 targetID) public onlyUser returns (uint256) {
+    function post(string memory contentCID, uint256 targetID) public onlyUser returns (uint256) {
         _reviewID.increment();
         uint256 reviewID = _reviewID.current();
         _safeMint(msg.sender, reviewID);
