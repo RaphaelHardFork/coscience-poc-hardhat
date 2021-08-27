@@ -7,6 +7,7 @@ const CONTRACT_NAME = 'Comments'
 const ADDRESS_ZERO = ethers.constants.AddressZero
 const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
 const HASHED_PASSWORD = ethers.utils.id('password')
+const ABSTRACT_ARRAY = [1, 1]
 
 // UTILS
 // function to get a JS comment list with the contract
@@ -186,24 +187,25 @@ describe('Comments', function () {
 
   describe('Deployment', function () {
     it('should deploy correctly the contract', async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
-      await users.connect(owner).acceptUser(1)
-      expect(await comments.testUser(article1Author.address)).to.equal(1)
+      expect(await comments.owner()).to.be.equal(owner.address)
     })
   })
 
   describe('Post a comment on article', function () {
     let postCall
     beforeEach(async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
-      await users.connect(comment1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(comment1Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(2)
 
       await articles
         .connect(article1Author)
-        .publish([wallet1.address, wallet2.address, wallet3.address], CID, CID)
-
+        .publish(
+          [wallet1.address, wallet2.address, wallet3.address],
+          ABSTRACT_ARRAY,
+          CID
+        )
       await reviews.connect(article1Author).post(CID, 1)
 
       postCall = await comments
@@ -259,8 +261,8 @@ describe('Comments', function () {
 */
   describe('display comments', function () {
     beforeEach(async function () {
-      await users.connect(comment1Author).register(HASHED_PASSWORD, CID)
-      await users.connect(comment2Author).register(HASHED_PASSWORD, CID)
+      await users.connect(comment1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(comment2Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       await users.connect(owner).acceptUser(2)
 

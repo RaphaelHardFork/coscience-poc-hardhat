@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IUsers.sol";
 
 /**
  * @title   Users and Owners
@@ -17,16 +18,18 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  *              - Informations of the user are stored on IPFS
  * */
 
-contract Users is Ownable {
+contract Users is Ownable, IUsers {
     using Counters for Counters.Counter;
     /** @notice Types & storages
      *  @dev    Enum {WhiteList} is used to set the status of the user
      * */
+    /*
     enum WhiteList {
         NotApproved,
         Pending,
         Approved
     }
+    */
 
     /**
      * @dev Struct User contains the following keys:
@@ -101,6 +104,11 @@ contract Users is Ownable {
         _;
     }
 
+    modifier alreadyRegistered() {
+        require(_userIdPointer[msg.sender] == 0, "Users: this wallet is already registered");
+        _;
+    }
+
     /**
      * @notice  Public functions
      * @dev     This function allow a wallet to register as a user
@@ -114,8 +122,7 @@ contract Users is Ownable {
         bytes32 hashedPassword_,
         string memory profileCID_,
         string memory nameCID_
-    ) public returns (bool) {
-        require(_userIdPointer[msg.sender] == 0, "Users: this wallet is already registered.");
+    ) public alreadyRegistered returns (bool) {
         _userID.increment();
         uint256 userID = _userID.current();
         User storage u = _user[userID];
@@ -175,8 +182,7 @@ contract Users is Ownable {
      *
      * @param newAddress    the new wallet address specified by the user
      */
-    function addWallet(address newAddress) public onlyUser returns (bool) {
-        require(_userIdPointer[newAddress] == 0, "Users: this wallet is already registered.");
+    function addWallet(address newAddress) public alreadyRegistered onlyUser returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         _user[userID].walletList.push(newAddress);
         _userIdPointer[newAddress] = userID;

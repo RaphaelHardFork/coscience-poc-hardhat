@@ -5,10 +5,10 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "./Users.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./IUsers.sol";
 import "./Articles.sol";
 import "./Reviews.sol";
-import "./Users.sol";
 
 /**
  * @title Comments
@@ -21,7 +21,7 @@ import "./Users.sol";
  * changeBaseURI: in case gateways out of function
  * */
 
-contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
+contract Comments is ERC721Enumerable, ERC721URIStorage, Ownable, IUsers {
     using Counters for Counters.Counter;
 
     struct Comment {
@@ -51,15 +51,15 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
         address articlesContract,
         address reviewsContract,
         address usersContract
-    ) Users(owner_) ERC721("Comment", "COM") {
+    ) Ownable() ERC721("Comment", "COM") {
         _articles = Articles(articlesContract);
         _reviews = Reviews(reviewsContract);
         _users = Users(usersContract);
+        transferOwnership(owner_);
         // baseURI override and public
     }
 
-    // overrides
-    modifier onlyUser() override {
+    modifier onlyUser() {
         uint256 userID = _users.profileID(msg.sender);
         require(_users.userStatus(userID) == WhiteList.Approved, "Comments: you must be approved to use this feature.");
         _;
@@ -135,9 +135,5 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Users {
     // is useful? enumerable? two way to find the list?
     function nbOfComment() public view returns (uint256) {
         return _commentID.current();
-    }
-
-    function testUser(address account) public view returns (uint256) {
-        return _users.profileID(account);
     }
 }

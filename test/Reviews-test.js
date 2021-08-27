@@ -7,6 +7,7 @@ const CONTRACT_NAME = 'Reviews'
 const ADDRESS_ZERO = ethers.constants.AddressZero
 const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
 const HASHED_PASSWORD = ethers.utils.id('password')
+const ABSTRACT_ARRAY = [1, 1]
 
 // UTILS
 // Pure function to create a JS object of the review list
@@ -102,21 +103,20 @@ describe('Reviews', function () {
     it('should asign owner ', async function () {
       expect(await reviews.owner()).to.equal(owner.address)
     })
-    it('should asign articles address', async function () {
-      expect(await reviews.articlesAddress()).to.equal(articles.address)
-    })
   })
 
   describe('post a review', function () {
     let postCall, coAuthor
     beforeEach(async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
-      await users.connect(review1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(review1Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       await users.connect(owner).acceptUser(2)
 
       coAuthor = [wallet1.address, wallet2.address, wallet3.address]
-      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+      await articles
+        .connect(article1Author)
+        .publish(coAuthor, ABSTRACT_ARRAY, CID)
       postCall = await reviews.connect(review1Author).post(CID, 1) // on article 1
     })
 
@@ -186,7 +186,9 @@ describe('Reviews', function () {
       await users.connect(owner).acceptUser(2)
 
       const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
-      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+      await articles
+        .connect(article1Author)
+        .publish(coAuthor, ABSTRACT_ARRAY, CID)
       await reviews.connect(review1Author).post(CID, 1) // on article 1
       banCall = await reviews.connect(owner).banPost(1)
     })
