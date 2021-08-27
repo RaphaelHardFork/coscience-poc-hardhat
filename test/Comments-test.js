@@ -201,11 +201,7 @@ describe('Comments', function () {
 
       await articles
         .connect(article1Author)
-        .publish(
-          [wallet1.address, wallet2.address, wallet3.address],
-          ABSTRACT_ARRAY,
-          CID
-        )
+        .publish([wallet1.address, wallet2.address, wallet3.address], CID, CID)
       await reviews.connect(article1Author).post(CID, 1)
 
       postCall = await comments
@@ -219,9 +215,6 @@ describe('Comments', function () {
       expect(await comments.totalSupply(), 'total supply').to.equal(2)
       expect(await comments.ownerOf(1), 'owner of').to.equal(
         comment1Author.address
-      )
-      expect(await comments.tokenURI(1), 'token uri').to.equal(
-        'https://ipfs.io/ifps/CID.json'
       )
     })
 
@@ -253,7 +246,7 @@ describe('Comments', function () {
     it('should revert if user is not registered', async function () {
       await expect(
         comments.connect(wallet3).post(CID, articles.address, 1)
-      ).to.be.revertedWith('Comments:')
+      ).to.be.revertedWith('Users: you must be approved to use this feature.')
     })
   })
   /*

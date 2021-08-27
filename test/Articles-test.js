@@ -59,14 +59,12 @@ describe('Articles', function () {
 
     beforeEach(async function () {
       // register + accept
-      await users
-        .connect(article1Author)
-        .register(HASHED_PASSWORD, HASHED_PASSWORD, HASHED_PASSWORD)
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       coAuthor = [wallet1.address, wallet2.address, wallet3.address]
       publishCall = await articles
         .connect(article1Author)
-        .publish(coAuthor, ABSTRACT_ARRAY, CID)
+        .publish(coAuthor, CID, CID)
     })
 
     it('should give back the CID', async function () {
@@ -86,16 +84,14 @@ describe('Articles', function () {
       expect(await articles.ownerOf(1), 'owner of').to.equal(
         article1Author.address
       )
-      expect(await articles.tokenURI(1), 'token uri').to.equal(CID)
     })
+
     it('should fill the struct properly', async function () {
       const struct = await articles.articleInfo(1)
       expect(struct.author, 'author').to.equal(article1Author.address)
       expect(struct.id, 'id').to.equal(1)
-      struct.abstractCID.forEach(async (uint, index) => {
-        expect(uint, `abstractCID ${index}`).to.equal(BigNumber.from('1'))
-      })
-      // expect(struct.contentCID, 'contentCID').to.equal(CID)
+      expect(struct.abstractCID, 'abstractCID').to.equal(CID)
+      expect(struct.contentCID, 'contentCID').to.equal(CID)
       struct.coAuthor.forEach(async (author, index) => {
         expect(author, `coAuthor ${index}`).to.equal(coAuthor[index])
       })
@@ -104,12 +100,12 @@ describe('Articles', function () {
     it('should emit a Published event', async function () {
       expect(publishCall)
         .to.emit(articles, 'Published')
-        .withArgs(article1Author.address, 1, ABSTRACT_ARRAY)
+        .withArgs(article1Author.address, 1, CID)
     })
 
     it('should revert if user is not registered', async function () {
       await expect(
-        articles.connect(wallet3).publish(coAuthor, ABSTRACT_ARRAY, CID)
+        articles.connect(wallet3).publish(coAuthor, CID, CID)
       ).to.be.revertedWith('Users:')
     })
   })
@@ -119,9 +115,7 @@ describe('Articles', function () {
       await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
-      await articles
-        .connect(article1Author)
-        .publish(coAuthor, ABSTRACT_ARRAY, CID)
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
     })
 
     it('should prevent the token transfert', async function () {
@@ -139,9 +133,7 @@ describe('Articles', function () {
       await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
-      await articles
-        .connect(article1Author)
-        .publish(coAuthor, ABSTRACT_ARRAY, CID)
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
       banCall = await articles.connect(owner).banArticle(1)
     })
 
@@ -169,21 +161,17 @@ describe('Articles', function () {
       await users.connect(owner).acceptUser(2)
 
       const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
-      await articles
-        .connect(article1Author)
-        .publish(coAuthor, ABSTRACT_ARRAY, CID)
-      await articles
-        .connect(article2Author)
-        .publish(coAuthor, ABSTRACT_ARRAY, CID)
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+      await articles.connect(article2Author).publish(coAuthor, CID, CID)
       await articles
         .connect(article2Author)
-        .publish(coAuthor.slice(0, 1), ABSTRACT_ARRAY, CID)
+        .publish(coAuthor.slice(0, 1), CID, CID)
       await articles
         .connect(article1Author)
-        .publish(coAuthor.slice(0, 2), ABSTRACT_ARRAY, CID)
+        .publish(coAuthor.slice(0, 2), CID, CID)
       await articles
         .connect(article1Author)
-        .publish(coAuthor.slice(1, 2), ABSTRACT_ARRAY, CID)
+        .publish(coAuthor.slice(1, 2), CID, CID)
     })
 
     it('display article list', async function () {

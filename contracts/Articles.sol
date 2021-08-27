@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import "./IUsers.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -21,7 +20,7 @@ import "./Users.sol";
  *
  */
 
-contract Articles is ERC721URIStorage, ERC721Enumerable, Ownable, IUsers {
+contract Articles is ERC721Enumerable, Ownable, IUsers {
     using Counters for Counters.Counter;
 
     //storage
@@ -36,13 +35,12 @@ contract Articles is ERC721URIStorage, ERC721Enumerable, Ownable, IUsers {
      * @param articleID     article's token ID
      * @param abstractCID   ipfs CID of the abstract
      * */
-    event Published(address indexed author, uint256 articleID, uint256[2] abstractCID);
+    event Published(address indexed author, uint256 articleID, string abstractCID);
 
     event ArticleBanned(uint256 indexed articleID);
 
     modifier onlyUser() {
-        uint256 userID = _users.profileID(msg.sender);
-        require(_users.userStatus(userID) == WhiteList.Approved, "Users: you must be approved to use this feature.");
+        require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
         _;
     }
 
@@ -61,8 +59,8 @@ contract Articles is ERC721URIStorage, ERC721Enumerable, Ownable, IUsers {
         bool contentBanned;
         uint256 id;
         address author;
-        uint256[2] abstractCID;
-        // uint256[2] contentCID;
+        string abstractCID;
+        string contentCID;
         address[] coAuthor;
         uint256[] comments;
         uint256[] reviews;
@@ -85,25 +83,18 @@ contract Articles is ERC721URIStorage, ERC721Enumerable, Ownable, IUsers {
 
     function publish(
         address[] memory coAuthor,
-        uint256[2] memory abstractCID,
-        string memory uri
-    )
-        public
-        //uint256[2] memory abstractCID
-        // uint256[2] memory contentCID
-        onlyUser
-        returns (uint256)
-    {
+        string memory abstractCID,
+        string memory contentCID
+    ) public onlyUser returns (uint256) {
         _articleID.increment();
         uint256 articleID = _articleID.current();
         _safeMint(msg.sender, articleID);
-        _setTokenURI(articleID, uri);
         Article storage a = _article[articleID];
         a.author = msg.sender;
         a.id = articleID;
         a.coAuthor = coAuthor;
         a.abstractCID = abstractCID;
-        // a.contentCID = contentCID;
+        a.contentCID = contentCID;
 
         emit Published(msg.sender, articleID, abstractCID);
         return articleID;
@@ -127,17 +118,7 @@ contract Articles is ERC721URIStorage, ERC721Enumerable, Ownable, IUsers {
         return true;
     }
 
-    function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
-        return super.tokenURI(tokenId);
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(ERC721Enumerable, ERC721)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
@@ -154,12 +135,12 @@ contract Articles is ERC721URIStorage, ERC721Enumerable, Ownable, IUsers {
         address from,
         address to,
         uint256 tokenId
-    ) internal virtual override(ERC721, ERC721Enumerable) {
+    ) internal virtual override(ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
         require(from == address(0) || to == address(0), "Articles: articles tokens are not transferable."); // IMPORTANT TEST
     }
 
-    function _burn(uint256 tokenId) internal virtual override(ERC721, ERC721URIStorage) {
+    function _burn(uint256 tokenId) internal virtual override(ERC721) {
         super._burn(tokenId);
     }
 

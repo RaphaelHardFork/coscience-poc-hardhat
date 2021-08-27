@@ -41,7 +41,7 @@ describe('Users', function () {
     beforeEach(async function () {
       registerCall1 = await users
         .connect(wallet1)
-        .register(HASHED_PASSWORD, CID)
+        .register(HASHED_PASSWORD, CID, CID)
     })
 
     it('should emit a Registered event', async function () {
@@ -61,14 +61,20 @@ describe('Users', function () {
     it('should fill the pointer mapping', async function () {
       expect(await users.profileID(wallet1.address)).to.equal(1)
     })
+
+    it('should revert if wallet is already registered', async function () {
+      await expect(
+        users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
+      ).to.be.revertedWith('Users: this wallet is already registered')
+    })
   })
 
   describe('acceptUser', function () {
     let acceptUserCall
     beforeEach(async function () {
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID)
+      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
       acceptUserCall = await users.connect(owner).acceptUser(1)
-      await users.connect(wallet2).register(HASHED_PASSWORD, CID)
+      await users.connect(wallet2).register(HASHED_PASSWORD, CID, CID)
     })
 
     it('should change the status', async function () {
@@ -99,7 +105,7 @@ describe('Users', function () {
   describe('banUser', function () {
     let banUserCall
     beforeEach(async function () {
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID)
+      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       banUserCall = await users.connect(owner).banUser(1)
     })
@@ -133,8 +139,8 @@ describe('Users', function () {
         wallet5.address,
         wallet6.address,
       ]
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID)
-      await users.connect(wallet2).register(HASHED_PASSWORD, CID)
+      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(wallet2).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       addWalletCall = await users.connect(wallet1).addWallet(wallet3.address)
       await users.connect(wallet1).addWallet(wallet4.address)
@@ -166,8 +172,8 @@ describe('Users', function () {
   describe('changePassword', function () {
     let changePasswordCall
     beforeEach(async function () {
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID)
-      await users.connect(wallet2).register(HASHED_PASSWORD, CID)
+      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(wallet2).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
 
       changePasswordCall = await users
@@ -196,7 +202,7 @@ describe('Users', function () {
   describe('forgotWallet', function () {
     let forgotWalletCall
     beforeEach(async function () {
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID) // [wallet1.address]
+      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID) // [wallet1.address]
       await users.connect(owner).acceptUser(1)
       forgotWalletCall = await users
         .connect(wallet3)
@@ -225,6 +231,25 @@ describe('Users', function () {
         .withArgs(wallet3.address, 1)
       // await expect(contract.function()) => TX test (revert or event emit)
       // expect(await contract.function()) => function (result) test
+    })
+  })
+
+  describe('editProfile', function () {
+    let editProfileCall
+    beforeEach(async function () {
+      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(owner).acceptUser(1)
+      editProfileCall = await users.connect(wallet1).editProfile('newCID')
+    })
+
+    it('should change the struct', async function () {
+      expect(await users.userProfile(1)).to.equal('newCID')
+    })
+
+    it('should emit an Edited event', async function () {
+      expect(editProfileCall)
+        .to.emit(users, 'Edited')
+        .withArgs(wallet1.address, 1, 'newCID')
     })
   })
 })

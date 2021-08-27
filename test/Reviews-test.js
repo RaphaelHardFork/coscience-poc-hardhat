@@ -114,9 +114,7 @@ describe('Reviews', function () {
       await users.connect(owner).acceptUser(2)
 
       coAuthor = [wallet1.address, wallet2.address, wallet3.address]
-      await articles
-        .connect(article1Author)
-        .publish(coAuthor, ABSTRACT_ARRAY, CID)
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
       postCall = await reviews.connect(review1Author).post(CID, 1) // on article 1
     })
 
@@ -124,9 +122,6 @@ describe('Reviews', function () {
       expect(await reviews.totalSupply(), 'total supply').to.equal(1)
       expect(await reviews.ownerOf(1), 'owner of').to.equal(
         review1Author.address
-      )
-      expect(await reviews.tokenURI(1), 'token uri').to.equal(
-        'https://ipfs.io/ifps/CID.json'
       )
     })
 
@@ -158,8 +153,8 @@ describe('Reviews', function () {
 
   describe('NFT behavior', function () {
     beforeEach(async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
-      await users.connect(review1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(review1Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       await users.connect(owner).acceptUser(2)
 
@@ -180,15 +175,13 @@ describe('Reviews', function () {
   describe('ban a review', function () {
     let banCall
     beforeEach(async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
-      await users.connect(review1Author).register(HASHED_PASSWORD, CID)
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(review1Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       await users.connect(owner).acceptUser(2)
 
       const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
-      await articles
-        .connect(article1Author)
-        .publish(coAuthor, ABSTRACT_ARRAY, CID)
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
       await reviews.connect(review1Author).post(CID, 1) // on article 1
       banCall = await reviews.connect(owner).banPost(1)
     })
@@ -205,10 +198,10 @@ describe('Reviews', function () {
 
   describe('display reviews', function () {
     beforeEach(async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID)
-      await users.connect(article2Author).register(HASHED_PASSWORD, CID)
-      await users.connect(review1Author).register(HASHED_PASSWORD, CID)
-      await users.connect(review2Author).register(HASHED_PASSWORD, CID)
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(article2Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(review1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(review2Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
       await users.connect(owner).acceptUser(2)
       await users.connect(owner).acceptUser(3)
@@ -232,8 +225,10 @@ describe('Reviews', function () {
     })
 
     it('display review list', async function () {
+      /*
       const obj = await jsReviewList(articles, reviews)
       console.log(obj)
+      */
     })
     it('display an user review list')
   })

@@ -1,8 +1,6 @@
 //SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
-
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -21,20 +19,8 @@ import "./Reviews.sol";
  * changeBaseURI: in case gateways out of function
  * */
 
-contract Comments is ERC721Enumerable, ERC721URIStorage, Ownable, IUsers {
+contract Comments is ERC721Enumerable, Ownable, IUsers {
     using Counters for Counters.Counter;
-
-    struct Comment {
-        uint256 id;
-        address author;
-        string contentCID;
-        bool contentBanned;
-        address target;
-        uint256 targetID;
-        uint256[] comments;
-        // edition date & bool with time duration
-    }
-
     // storage & event
     Articles private _articles;
     Reviews private _reviews;
@@ -45,6 +31,22 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Ownable, IUsers {
 
     event Posted(address indexed poster, uint256 commentID, address indexed target, uint256 targetID);
     event CommentBanned(uint256 indexed commentID);
+
+    modifier onlyUser() {
+        require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
+        _;
+    }
+
+    struct Comment {
+        bool contentBanned;
+        uint256 id;
+        uint256 targetID;
+        address target;
+        address author;
+        string contentCID;
+        uint256[] comments;
+        // edition date & bool with time duration
+    }
 
     constructor(
         address owner_,
@@ -59,36 +61,7 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Ownable, IUsers {
         // baseURI override and public
     }
 
-    modifier onlyUser() {
-        uint256 userID = _users.profileID(msg.sender);
-        require(_users.userStatus(userID) == WhiteList.Approved, "Comments: you must be approved to use this feature.");
-        _;
-    }
-
-    function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
-    ) internal virtual override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId);
-        require(from == address(0) || to == address(0), "Comment: you cannot transfer this token"); // IMPORTANT TEST
-    }
-
-    function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
-        return super.tokenURI(tokenId);
-    }
-
-    function _burn(uint256 tokenId) internal virtual override(ERC721, ERC721URIStorage) {
-        super._burn(tokenId);
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(ERC721Enumerable, ERC721)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
@@ -101,7 +74,6 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Ownable, IUsers {
         _commentID.increment();
         uint256 commentID = _commentID.current();
         _safeMint(msg.sender, commentID);
-        _setTokenURI(commentID, "https://ipfs.io/ifps/CID.json");
         Comment storage c = _comment[commentID];
         c.author = msg.sender;
         c.id = commentID;
@@ -135,5 +107,18 @@ contract Comments is ERC721Enumerable, ERC721URIStorage, Ownable, IUsers {
     // is useful? enumerable? two way to find the list?
     function nbOfComment() public view returns (uint256) {
         return _commentID.current();
+    }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override(ERC721Enumerable) {
+        super._beforeTokenTransfer(from, to, tokenId);
+        require(from == address(0) || to == address(0), "Comment: you cannot transfer this token"); // IMPORTANT TEST
+    }
+
+    function _burn(uint256 tokenId) internal virtual override(ERC721) {
+        super._burn(tokenId);
     }
 }
