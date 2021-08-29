@@ -62,6 +62,12 @@ describe('Users', function () {
       expect(await users.profileID(wallet1.address)).to.equal(1)
     })
 
+    it('should increment the number of ID', async function () {
+      expect(await users.nbOfUsers()).to.equal(1)
+      await users.connect(wallet2).register(HASHED_PASSWORD, CID, CID)
+      expect(await users.nbOfUsers()).to.equal(2)
+    })
+
     it('should revert if wallet is already registered', async function () {
       await expect(
         users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
@@ -81,6 +87,16 @@ describe('Users', function () {
       expect(await users.userStatus(1)).to.equal(2) // 2 = Approved
     })
 
+    it('should change isUser boolean return when user is approved by owner', async function () {
+      expect(await users.connect(wallet1).isUser(wallet2.address)).to.equal(
+        false
+      )
+      await users.connect(wallet3).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(owner).acceptUser(3)
+      expect(await users.connect(wallet1).isUser(wallet3.address)).to.equal(
+        true
+      )
+    })
     it('should emit an Approved event', async function () {
       expect(acceptUserCall).to.emit(users, 'Approved').withArgs(1)
     })
@@ -114,6 +130,18 @@ describe('Users', function () {
       expect(await users.userStatus(1)).to.equal(0) // 0 = Not Approved
     })
 
+    it('should change isUser boolean return when user is banned by owner', async function () {
+      await users.connect(wallet2).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(owner).acceptUser(2)
+      expect(await users.connect(wallet1).isUser(wallet2.address)).to.equal(
+        true
+      )
+      await users.connect(owner).banUser(2)
+      expect(await users.connect(wallet1).isUser(wallet2.address)).to.equal(
+        false
+      )
+    })
+
     it('should emit banned user by ID', async function () {
       expect(banUserCall).to.emit(users, 'Banned').withArgs(1)
     })
@@ -124,8 +152,13 @@ describe('Users', function () {
       )
     })
 
-    it('should revert if user is not registered', async function () {
-      await expect(users.connect(owner).banUser(3)).to.be.revertedWith('Users:')
+    it('should revert if user is not registered or already banned', async function () {
+      await expect(users.connect(owner).banUser(3)).to.be.revertedWith(
+        'Users: user is not registered or already banned'
+      )
+      await expect(users.connect(owner).banUser(1)).to.be.revertedWith(
+        'Users: user is not registered or already banned'
+      )
     })
   })
 
@@ -165,7 +198,13 @@ describe('Users', function () {
     it('should revert if not approved', async function () {
       await expect(
         users.connect(wallet2).addWallet(wallet3.address)
-      ).to.be.revertedWith('Users:')
+      ).to.be.revertedWith('Users: you must be approved to use this feature.')
+    })
+
+    it('should revert if the added address already exist in the walletlist', async function () {
+      await expect(
+        users.connect(wallet1).addWallet(wallet3.address)
+      ).to.be.revertedWith('Users: this wallet is already registered')
     })
   })
 
@@ -250,6 +289,16 @@ describe('Users', function () {
       expect(editProfileCall)
         .to.emit(users, 'Edited')
         .withArgs(wallet1.address, 1, 'newCID')
+    })
+
+    it('should revert if not registered or pending', async function () {
+      await expect(
+        users.connect(wallet2).editProfile('newCID')
+      ).to.be.revertedWith('Users: you must be approved to use this feature.')
+      await users.connect(wallet2).register(HASHED_PASSWORD, CID, CID)
+      await expect(
+        users.connect(wallet2).editProfile('newCID')
+      ).to.be.revertedWith('Users: you must be approved to use this feature.')
     })
   })
 })

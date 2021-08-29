@@ -188,10 +188,17 @@ describe('Comments', function () {
   describe('Deployment', function () {
     it('should deploy correctly the contract', async function () {
       expect(await comments.owner()).to.be.equal(owner.address)
+      expect(await comments.usersContractAddress()).to.be.equal(users.address)
+      expect(await comments.articlesContractAddress()).to.be.equal(
+        articles.address
+      )
+      expect(await comments.reviewsContractAddress()).to.be.equal(
+        reviews.address
+      )
     })
   })
 
-  describe('Post a comment on article', function () {
+  describe('Post a comment on article/review/comment', function () {
     let postCall
     beforeEach(async function () {
       await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
@@ -213,6 +220,7 @@ describe('Comments', function () {
 
     it('should mint a NFT to the publisher', async function () {
       expect(await comments.totalSupply(), 'total supply').to.equal(2)
+      expect(await comments.nbOfComment()).to.equal(2)
       expect(await comments.ownerOf(1), 'owner of').to.equal(
         comment1Author.address
       )
@@ -237,10 +245,31 @@ describe('Comments', function () {
       expect(struct.comments[0]).to.equal(2)
     })
 
+    it('should fill the array of the corresponding comment', async function () {
+      await comments.connect(article1Author).post(CID, comments.address, 1)
+      const struct = await comments.commentInfo(1)
+      expect(struct.comments[0]).to.equal(3)
+    })
+
     it('should emit a Posted event', async function () {
+      // comment on article event
       expect(postCall)
         .to.emit(comments, 'Posted')
         .withArgs(comment1Author.address, 1, articles.address, 1)
+
+      // comment on review event
+      await expect(
+        comments.connect(article1Author).post(CID, reviews.address, 1)
+      )
+        .to.emit(comments, 'Posted')
+        .withArgs(article1Author.address, 3, reviews.address, 1)
+
+      // comment on comment event
+      await expect(
+        comments.connect(article1Author).post(CID, comments.address, 1)
+      )
+        .to.emit(comments, 'Posted')
+        .withArgs(article1Author.address, 4, comments.address, 1)
     })
 
     it('should revert if user is not registered', async function () {
@@ -249,9 +278,44 @@ describe('Comments', function () {
       ).to.be.revertedWith('Users: you must be approved to use this feature.')
     })
   })
+
   /*
   })
 */
+
+  describe('banPost', function () {
+    let banCall
+    beforeEach(async function () {
+      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(owner).acceptUser(1)
+      await users.connect(comment1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(owner).acceptUser(2)
+
+      await articles
+        .connect(article1Author)
+        .publish([wallet1.address, wallet2.address, wallet3.address], CID, CID)
+      await reviews.connect(article1Author).post(CID, 1)
+
+      await comments.connect(comment1Author).post(CID, articles.address, 1)
+
+      banCall = await comments.connect(owner).banPost(1)
+    })
+
+    it('should emit a commentBanned event on an article', async function () {
+      await expect(banCall).to.emit(comments, 'CommentBanned').withArgs(1)
+    })
+
+    it('should change the struct Comment contentBanned to true', async function () {
+      const struct = await comments.commentInfo(1)
+      expect(struct.contentBanned).to.equal(true)
+    })
+    it('should revert if user is not the owner', async function () {
+      await expect(comments.connect(wallet2).banPost(1)).to.be.revertedWith(
+        'Ownable:'
+      )
+    })
+  })
+
   describe('display comments', function () {
     beforeEach(async function () {
       await users.connect(comment1Author).register(HASHED_PASSWORD, CID, CID)

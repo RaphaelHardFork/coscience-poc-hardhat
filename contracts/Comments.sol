@@ -109,6 +109,18 @@ contract Comments is ERC721Enumerable, Ownable, IUsers {
         return _commentID.current();
     }
 
+    function articlesContractAddress() public view returns (Articles) {
+        return _articles;
+    }
+
+    function reviewsContractAddress() public view returns (Reviews) {
+        return _reviews;
+    }
+
+    function usersContractAddress() public view returns (Users) {
+        return _users;
+    }
+
     function _beforeTokenTransfer(
         address from,
         address to,

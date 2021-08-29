@@ -188,7 +188,7 @@ contract Users is Ownable, IUsers {
      *
      * @param newAddress    the new wallet address specified by the user
      */
-    function addWallet(address newAddress) public alreadyRegistered(newAddress) onlyUser returns (bool) {
+    function addWallet(address newAddress) public onlyUser alreadyRegistered(newAddress) returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         _user[userID].walletList.push(newAddress);
         _userIdPointer[newAddress] = userID;

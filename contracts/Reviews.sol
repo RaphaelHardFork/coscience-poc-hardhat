@@ -78,11 +78,6 @@ contract Reviews is ERC721Enumerable, Ownable, IUsers {
         return super.supportsInterface(interfaceId);
     }
 
-    // is useful? enumerable? two way to find the list?
-    function nbOfReview() public view returns (uint256) {
-        return _reviewID.current();
-    }
-
     function banPost(uint256 reviewID) public onlyOwner returns (bool) {
         _review[reviewID].contentBanned = true;
 
@@ -91,12 +86,26 @@ contract Reviews is ERC721Enumerable, Ownable, IUsers {
     }
 
     function fillCommentsArray(uint256 reviewID, uint256 commentID) public returns (bool) {
+        // check needed / maybe internal
         _review[reviewID].comments.push(commentID);
         return true;
     }
 
+    // is useful? enumerable? two way to find the list?
+    function nbOfReview() public view returns (uint256) {
+        return _reviewID.current();
+    }
+
     function reviewInfo(uint256 reviewID) public view returns (Review memory) {
         return _review[reviewID];
+    }
+
+    function usersContractAddress() public view returns (Users) {
+        return _users;
+    }
+
+    function articlesContractAddress() public view returns (Articles) {
+        return _articles;
     }
 
     function _beforeTokenTransfer(

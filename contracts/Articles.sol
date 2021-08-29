@@ -101,19 +101,23 @@ contract Articles is ERC721Enumerable, Ownable, IUsers {
     }
 
     function banArticle(uint256 articleID) public onlyOwner returns (bool) {
+        require(
+            _article[articleID].id == articleID && _article[articleID].contentBanned == false,
+            "Articles: This Article does not exist or is already banned"
+        );
         _article[articleID].contentBanned = true;
         emit ArticleBanned(articleID);
         return true;
     }
 
     function fillReviewsArray(uint256 articleID, uint256 reviewID) public returns (bool) {
-        // check needed
+        // check needed / maybe internal
         _article[articleID].reviews.push(reviewID);
         return true;
     }
 
     function fillCommentsArray(uint256 articleID, uint256 commentID) public returns (bool) {
-        // check needed
+        // check needed / maybe internal
         _article[articleID].comments.push(commentID);
         return true;
     }
@@ -128,6 +132,10 @@ contract Articles is ERC721Enumerable, Ownable, IUsers {
 
     function nbOfArticles() public view returns (uint256) {
         return _articleID.current();
+    }
+
+    function usersContractAddress() public view returns (Users) {
+        return _users;
     }
 
     // internal

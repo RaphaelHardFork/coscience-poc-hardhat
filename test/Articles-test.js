@@ -52,6 +52,10 @@ describe('Articles', function () {
     it('should asign owner as the owner', async function () {
       expect(await articles.owner()).to.be.equal(owner.address)
     })
+
+    it('should return the user contract address', async function () {
+      expect(await articles.usersContractAddress()).to.be.equal(users.address)
+    })
   })
 
   describe('publish an article', function () {
@@ -65,6 +69,12 @@ describe('Articles', function () {
       publishCall = await articles
         .connect(article1Author)
         .publish(coAuthor, CID, CID)
+    })
+
+    it('should get the current number of Article published', async function () {
+      expect(await articles.nbOfArticles()).to.equal(1)
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+      expect(await articles.nbOfArticles()).to.equal(2)
     })
 
     it('should give back the CID', async function () {
@@ -103,14 +113,18 @@ describe('Articles', function () {
         .withArgs(article1Author.address, 1, CID)
     })
 
-    it('should revert if user is not registered', async function () {
+    it('should revert if user is not registered or approved', async function () {
       await expect(
         articles.connect(wallet3).publish(coAuthor, CID, CID)
+      ).to.be.revertedWith('Users:')
+      await users.connect(article2Author).register(HASHED_PASSWORD, CID, CID)
+      await expect(
+        articles.connect(article2Author).publish(coAuthor, CID, CID)
       ).to.be.revertedWith('Users:')
     })
   })
 
-  describe('NFT behavior', async function () {
+  describe('non-transferable NFT behavior', async function () {
     beforeEach(async function () {
       await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
       await users.connect(owner).acceptUser(1)
@@ -149,6 +163,15 @@ describe('Articles', function () {
     it('should revert if not owner attempt to ban article', async function () {
       await expect(articles.connect(wallet2).banArticle(1)).to.be.revertedWith(
         'Ownable:'
+      )
+    })
+
+    it('should revert if owner ban an article who does not exist or already banned', async function () {
+      await expect(articles.connect(owner).banArticle(3)).to.be.revertedWith(
+        'Articles: This Article does not exist or is already banned'
+      )
+      await expect(articles.connect(owner).banArticle(1)).to.be.revertedWith(
+        'Articles: This Article does not exist or is already banned'
       )
     })
   })

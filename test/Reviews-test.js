@@ -100,8 +100,10 @@ describe('Reviews', function () {
   })
 
   describe('Deployment', function () {
-    it('should asign owner ', async function () {
+    it('should deploy correctly the contract ', async function () {
       expect(await reviews.owner()).to.equal(owner.address)
+      expect(await reviews.usersContractAddress()).to.equal(users.address)
+      expect(await reviews.articlesContractAddress()).to.equal(articles.address)
     })
   })
 
@@ -120,6 +122,7 @@ describe('Reviews', function () {
 
     it('should mint a NFT to the poster', async function () {
       expect(await reviews.totalSupply(), 'total supply').to.equal(1)
+      expect(await reviews.nbOfReview()).to.equal(1)
       expect(await reviews.ownerOf(1), 'owner of').to.equal(
         review1Author.address
       )
