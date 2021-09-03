@@ -35,7 +35,7 @@ Need owner auth functions
 }
 ```
 
-### Version 0.1
+### Version 0.1 branch
 
 - CID as string needed
 - No token URI for the moment
