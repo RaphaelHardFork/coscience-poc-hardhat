@@ -6,8 +6,6 @@ const { ethers } = require('hardhat')
 const CONTRACT_NAME = 'Reviews'
 const ADDRESS_ZERO = ethers.constants.AddressZero
 const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
-const HASHED_PASSWORD = ethers.utils.id('password')
-const ABSTRACT_ARRAY = [1, 1]
 
 // UTILS
 // Pure function to create a JS object of the review list
@@ -53,11 +51,8 @@ const jsReviewList = async (articles, reviews, listOfId) => {
 }
 
 describe('Reviews', function () {
-  let Users,
-    users,
-    Reviews,
+  let users,
     reviews,
-    Articles,
     articles,
     dev,
     owner,
@@ -82,34 +77,29 @@ describe('Reviews', function () {
       wallet3,
     ] = await ethers.getSigners()
 
-    Users = await ethers.getContractFactory('Users')
+    const Users = await ethers.getContractFactory('Users')
     users = await Users.connect(dev).deploy(owner.address)
     await users.deployed()
 
-    Articles = await ethers.getContractFactory('Articles')
-    articles = await Articles.connect(dev).deploy(owner.address, users.address)
+    const Articles = await ethers.getContractFactory('Articles')
+    articles = await Articles.connect(dev).deploy(users.address)
     await articles.deployed()
 
-    Reviews = await ethers.getContractFactory(CONTRACT_NAME)
-    reviews = await Reviews.connect(dev).deploy(
-      owner.address,
-      articles.address,
-      users.address
-    )
-    await reviews.deployed()
+    // get address of deployed contracts
+    const Reviews = await ethers.getContractFactory(CONTRACT_NAME)
+    const reviewsAddress = await articles.reviewsAddress() // function Articles.sol
+    reviews = await Reviews.attach(reviewsAddress)
   })
 
   describe('Deployment', function () {
-    it('should asign owner ', async function () {
-      expect(await reviews.owner()).to.equal(owner.address)
-    })
+    //
   })
 
   describe('post a review', function () {
     let postCall, coAuthor
     beforeEach(async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
-      await users.connect(review1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(article1Author).register(CID, CID)
+      await users.connect(review1Author).register(CID, CID)
       await users.connect(owner).acceptUser(1)
       await users.connect(owner).acceptUser(2)
 
@@ -153,8 +143,8 @@ describe('Reviews', function () {
 
   describe('NFT behavior', function () {
     beforeEach(async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
-      await users.connect(review1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(article1Author).register(CID, CID)
+      await users.connect(review1Author).register(CID, CID)
       await users.connect(owner).acceptUser(1)
       await users.connect(owner).acceptUser(2)
 
@@ -175,8 +165,8 @@ describe('Reviews', function () {
   describe('ban a review', function () {
     let banCall
     beforeEach(async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
-      await users.connect(review1Author).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(article1Author).register(CID, CID)
+      await users.connect(review1Author).register(CID, CID)
       await users.connect(owner).acceptUser(1)
       await users.connect(owner).acceptUser(2)
 
@@ -194,42 +184,5 @@ describe('Reviews', function () {
     it('should emit a ReviewBanned event', async function () {
       expect(banCall).to.emit(reviews, 'ReviewBanned').withArgs(1)
     })
-  })
-
-  describe('display reviews', function () {
-    beforeEach(async function () {
-      await users.connect(article1Author).register(HASHED_PASSWORD, CID, CID)
-      await users.connect(article2Author).register(HASHED_PASSWORD, CID, CID)
-      await users.connect(review1Author).register(HASHED_PASSWORD, CID, CID)
-      await users.connect(review2Author).register(HASHED_PASSWORD, CID, CID)
-      await users.connect(owner).acceptUser(1)
-      await users.connect(owner).acceptUser(2)
-      await users.connect(owner).acceptUser(3)
-      await users.connect(owner).acceptUser(4)
-
-      const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
-      await articles.connect(article1Author).publish(coAuthor, CID, CID)
-      await articles.connect(article2Author).publish(coAuthor, CID, CID)
-      await articles
-        .connect(article2Author)
-        .publish(coAuthor.slice(0, 1), CID, CID)
-      await articles
-        .connect(article1Author)
-        .publish(coAuthor.slice(0, 2), CID, CID)
-
-      await reviews.connect(review1Author).post(CID, 1)
-      await reviews.connect(review2Author).post(CID, 1)
-      await reviews.connect(review2Author).post(CID, 3)
-      await reviews.connect(review1Author).post(CID, 2)
-      await reviews.connect(review1Author).post(CID, 1)
-    })
-
-    it('display review list', async function () {
-      /*
-      const obj = await jsReviewList(articles, reviews)
-      console.log(obj)
-      */
-    })
-    it('display an user review list')
   })
 })

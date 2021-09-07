@@ -43,7 +43,7 @@ contract Users is Ownable, IUsers {
     /**
      * @dev    Emitted when an user change his profile informations (bio, avatar, ...)
      * */
-    event Edited(address indexed user, uint256 userID, string profileCID);
+    event Edited(address indexed user, uint256 indexed userID, string profileCID);
 
     /**
      * @dev    Emitted when an user is approved by the owner of the contract
@@ -59,7 +59,7 @@ contract Users is Ownable, IUsers {
     /**
      * @dev     Emitted when an user use this function to recover his user profile
      * */
-    event ProfileRecovered(address indexed account, uint256 userID);
+    event ProfileRecovered(address indexed account, uint256 indexed userID);
 
     /**
      * @notice  Modifiers
@@ -67,9 +67,8 @@ contract Users is Ownable, IUsers {
      *
      *          A new modifier is set in others contracts for this purpose
      * */
-    modifier onlyUser() {
-        uint256 userID = _userIdPointer[msg.sender];
-        require(_user[userID].status == WhiteList.Approved, "Users: you must be approved to use this feature.");
+    modifier onlyUser(address account) {
+        require(isUser(account) == true, "Users: you must be approved to use this feature.");
         _;
     }
     /**
@@ -85,7 +84,6 @@ contract Users is Ownable, IUsers {
      * @dev Struct User contains the following keys:
      *          - {id}: set by Counters.sol
      *          - {status}: user approval status
-     *          - {hashedPassword}: keccak256 hash of the password defined by users
      *          - {profileCID}: CID pointer to user's profile information (bio, avatar, laboratory, ...)
      *          - {nameCID}: CID pointer to user's permanent information, this one is not editable
      *          - {walletList}: list of wallets owned by the user
@@ -93,7 +91,6 @@ contract Users is Ownable, IUsers {
     struct User {
         uint256 id;
         WhiteList status;
-        bytes32 hashedPassword;
         string nameCID;
         string profileCID;
         address[] walletList;
@@ -113,18 +110,18 @@ contract Users is Ownable, IUsers {
      *
      *          Emit a {Registered} event
      *
-     * @param hashedPassword_   the hash of the user's password (done in the front-end part)
      * @param profileCID_       the CID hash allowing to get the user's profile informations
+     * @param nameCID_          the CID hash allowing to get the user's informations (not editable)
+
      */
-    function register(
-        bytes32 hashedPassword_,
-        string memory profileCID_,
-        string memory nameCID_
-    ) public alreadyRegistered(msg.sender) returns (bool) {
+    function register(string memory profileCID_, string memory nameCID_)
+        public
+        alreadyRegistered(msg.sender)
+        returns (bool)
+    {
         _userID.increment();
         uint256 userID = _userID.current();
         User storage u = _user[userID];
-        u.hashedPassword = hashedPassword_;
         u.id = userID;
         u.status = WhiteList.Pending;
         u.nameCID = nameCID_;
@@ -144,7 +141,7 @@ contract Users is Ownable, IUsers {
      *
      * @param profileCID_   user ID is specify to get access to the corresponding Struct User
      */
-    function editProfile(string memory profileCID_) public onlyUser returns (bool) {
+    function editProfile(string memory profileCID_) public onlyUser(msg.sender) returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         _user[userID].profileCID = profileCID_;
 
@@ -188,7 +185,7 @@ contract Users is Ownable, IUsers {
      *
      * @param newAddress    the new wallet address specified by the user
      */
-    function addWallet(address newAddress) public alreadyRegistered(newAddress) onlyUser returns (bool) {
+    function addWallet(address newAddress) public alreadyRegistered(newAddress) onlyUser(msg.sender) returns (bool) {
         uint256 userID = _userIdPointer[msg.sender];
         _user[userID].walletList.push(newAddress);
         _userIdPointer[newAddress] = userID;
@@ -196,32 +193,23 @@ contract Users is Ownable, IUsers {
     }
 
     /**
-     * @dev This function is used to change the recovery password in case user forgot it
+     * @dev     This function is called by the Owner to recover the lost account of an user.
      *
-     * @param newPassword   the hash of the new user's password
-     */
-    function changePassword(bytes32 newPassword) public onlyUser returns (bool) {
-        uint256 userID = _userIdPointer[msg.sender];
-        require(_user[userID].hashedPassword != newPassword, "Users: Passwords must be different");
-        _user[userID].hashedPassword = newPassword;
-        return true;
-    }
-
-    /**
-     * @dev This function use the password to allows the user to recover his profile with a new wallet.
+     *          Emit a {ProfileRecovered} event.
      *
-     * @param password  the user's hashed password
-     * @param userID    ID of the user's profile
-     *
-     *      IMPORTANT NOTE: This is a major security fault because the hashed password stored in the User's Struct
-     *                      can be read. So by using a script everyone can add the ID and the hashed password bytes
-     *                      to recover the profile of an user. This will be solved in the next version of this contract.
-     */
-    function forgotWallet(bytes32 password, uint256 userID) public returns (bool) {
-        require(password == _user[userID].hashedPassword, "Users: incorrect password");
-        _user[userID].walletList.push(msg.sender);
-        _userIdPointer[msg.sender] = userID;
-        emit ProfileRecovered(msg.sender, userID);
+     * @param newAddress    the new address of the user
+     * @param userID        ID of the user's profile
+     **/
+    function recoverAccount(uint256 userID, address newAddress)
+        public
+        alreadyRegistered(newAddress)
+        onlyOwner
+        returns (bool)
+    {
+        require(_user[userID].status == WhiteList.Approved, "Users: user must be approved");
+        _user[userID].walletList.push(newAddress);
+        _userIdPointer[newAddress] = userID;
+        emit ProfileRecovered(newAddress, userID);
         return true;
     }
 
@@ -235,44 +223,8 @@ contract Users is Ownable, IUsers {
         return _userIdPointer[account];
     }
 
-    /**
-     *  @dev   Return the status of the user's profile with the ID
-     *
-     *  @param userID user's profile ID
-     * */
-    function userStatus(uint256 userID) public view returns (WhiteList) {
-        return _user[userID].status;
-    }
-
-    function userName(uint256 userID) public view returns (string memory) {
-        return _user[userID].nameCID;
-    }
-
-    /**
-     *  @dev    Return the CID pointer to user's informations with the ID
-     *
-     *  @param userID user's profile ID
-     * */
-    function userProfile(uint256 userID) public view returns (string memory) {
-        return _user[userID].profileCID;
-    }
-
-    /**
-     *  @dev    Return number of wallet used by an user
-     *
-     *  @param userID user's profile ID
-     * */
-    function userNbOfWallet(uint256 userID) public view returns (uint256) {
-        return _user[userID].walletList.length;
-    }
-
-    /**
-     *  @dev    Return the list of wallet used by an user
-     *
-     *  @param userID user's profile ID
-     * */
-    function userWalletList(uint256 userID) public view returns (address[] memory) {
-        return _user[userID].walletList;
+    function userInfo(uint256 userID) public view returns (User memory) {
+        return _user[userID];
     }
 
     function nbOfUsers() public view returns (uint256) {

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Users.sol";
 import "./IUsers.sol";
 import "./Articles.sol";
 
@@ -18,7 +18,7 @@ import "./Articles.sol";
  * changeBaseURI: in case gateways out of function
  * */
 
-contract Reviews is ERC721Enumerable, Ownable, IUsers {
+contract Reviews is ERC721Enumerable, IUsers {
     using Counters for Counters.Counter;
 
     // storage & event
@@ -27,11 +27,16 @@ contract Reviews is ERC721Enumerable, Ownable, IUsers {
     Counters.Counter private _reviewID;
     mapping(uint256 => Review) private _review;
 
-    event Posted(address indexed poster, uint256 reviewID, uint256 targetID);
+    event Posted(address indexed poster, uint256 indexed reviewID, uint256 targetID);
     event ReviewBanned(uint256 indexed _reviewID);
 
     modifier onlyUser() {
         require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(_users.owner() == msg.sender, "Users: caller is not the owner");
         _;
     }
 
@@ -46,14 +51,10 @@ contract Reviews is ERC721Enumerable, Ownable, IUsers {
         // reviews only on articles
     }
 
-    constructor(
-        address owner_,
-        address articlesContract,
-        address usersContract
-    ) Ownable() ERC721("Review", "REV") {
+    constructor(address articlesContract, address usersContract) ERC721("Review", "REV") {
         _articles = Articles(articlesContract);
         _users = Users(usersContract);
-        transferOwnership(owner_);
+
         // baseURI override and public
     }
 
@@ -91,6 +92,7 @@ contract Reviews is ERC721Enumerable, Ownable, IUsers {
     }
 
     function fillCommentsArray(uint256 reviewID, uint256 commentID) public returns (bool) {
+        require(msg.sender == _articles.commentsAddress(), "Reviews: this function is only callable by Comments.sol");
         _review[reviewID].comments.push(commentID);
         return true;
     }

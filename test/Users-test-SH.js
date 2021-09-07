@@ -5,8 +5,6 @@ const { ethers } = require('hardhat')
 
 const CONTRACT_NAME = 'Users'
 const ADDRESS_ZERO = ethers.constants.AddressZero
-const HASHED_PASSWORD = ethers.utils.id('password')
-const NEW_HASHED_PASSWORD = ethers.utils.id('password2')
 
 const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
 
@@ -39,9 +37,7 @@ describe('Users', function () {
   describe('Register', function () {
     let registerCall1
     beforeEach(async function () {
-      registerCall1 = await users
-        .connect(wallet1)
-        .register(HASHED_PASSWORD, CID, CID)
+      registerCall1 = await users.connect(wallet1).register(CID, CID)
     })
 
     it('should emit a Registered event', async function () {
@@ -51,11 +47,13 @@ describe('Users', function () {
     })
 
     it('should fill the struct properly', async function () {
-      expect(await users.userStatus(1), 'status').to.equal(1) // 1 = Pending
-      expect(await users.userProfile(1), 'profileCID').to.equal(CID)
-      expect(await users.userNbOfWallet(1), 'nbOfWallet').to.equal(1)
-      const walletTab = await users.userWalletList(1)
-      expect(walletTab[0], 'walletList').to.equal(wallet1.address)
+      const struct = await users.userInfo(1)
+
+      expect(struct.status, 'status').to.equal(1) // 1 = Pending
+      expect(struct.profileCID, 'profileCID').to.equal(CID)
+      expect(struct.nameCID, 'nameCID').to.equal(CID)
+      expect(struct.walletList.length, 'nbOfWallet').to.equal(1)
+      expect(struct.walletList[0], 'walletList').to.equal(wallet1.address)
     })
 
     it('should fill the pointer mapping', async function () {
@@ -64,7 +62,7 @@ describe('Users', function () {
 
     it('should revert if wallet is already registered', async function () {
       await expect(
-        users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
+        users.connect(wallet1).register(CID, CID)
       ).to.be.revertedWith('Users: this wallet is already registered')
     })
   })
@@ -72,13 +70,14 @@ describe('Users', function () {
   describe('acceptUser', function () {
     let acceptUserCall
     beforeEach(async function () {
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(wallet1).register(CID, CID)
       acceptUserCall = await users.connect(owner).acceptUser(1)
-      await users.connect(wallet2).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(wallet2).register(CID, CID)
     })
 
     it('should change the status', async function () {
-      expect(await users.userStatus(1)).to.equal(2) // 2 = Approved
+      const struct = await users.userInfo(1)
+      expect(struct.status).to.equal(2) // 2 = Approved
     })
 
     it('should emit an Approved event', async function () {
@@ -90,6 +89,7 @@ describe('Users', function () {
         'Ownable:'
       )
     })
+
     it('should revert if user is not registered', async function () {
       await expect(
         users.connect(owner).acceptUser(3),
@@ -105,13 +105,14 @@ describe('Users', function () {
   describe('banUser', function () {
     let banUserCall
     beforeEach(async function () {
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(wallet1).register(CID, CID)
       await users.connect(owner).acceptUser(1)
       banUserCall = await users.connect(owner).banUser(1)
     })
 
     it('should change the status', async function () {
-      expect(await users.userStatus(1)).to.equal(0) // 0 = Not Approved
+      const struct = await users.userInfo(1)
+      expect(struct.status).to.equal(0) // 0 = Not Approved
     })
 
     it('should emit banned user by ID', async function () {
@@ -139,8 +140,8 @@ describe('Users', function () {
         wallet5.address,
         wallet6.address,
       ]
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
-      await users.connect(wallet2).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(wallet1).register(CID, CID)
+      await users.connect(wallet2).register(CID, CID)
       await users.connect(owner).acceptUser(1)
       addWalletCall = await users.connect(wallet1).addWallet(wallet3.address)
       await users.connect(wallet1).addWallet(wallet4.address)
@@ -149,15 +150,15 @@ describe('Users', function () {
     })
 
     it('should add the wallet in the array', async function () {
-      const walletArray = await users.userWalletList(0)
-      walletArray.forEach((elem, index) => {
+      const struct = await users.userInfo(1)
+      struct.walletList.forEach((elem, index) => {
         expect(elem, index).to.equal(walletOfUser1[index])
       })
     })
 
     it('should add the pointer', async function () {
-      const walletArray = await users.userWalletList(0)
-      walletArray.forEach(async (address, index) => {
+      const struct = await users.userInfo(1)
+      struct.walletList.forEach(async (address, index) => {
         expect(await users.profileID(address), index).to.equal(1)
       })
     })
@@ -169,81 +170,61 @@ describe('Users', function () {
     })
   })
 
-  describe('changePassword', function () {
-    let changePasswordCall
+  describe('recoverAccount', function () {
+    let recoverAccountCall
     beforeEach(async function () {
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
-      await users.connect(wallet2).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(wallet1).register(CID, CID)
       await users.connect(owner).acceptUser(1)
-
-      changePasswordCall = await users
-        .connect(wallet1)
-        .changePassword(NEW_HASHED_PASSWORD)
-    })
-
-    it('should revert if not registered or not approved', async function () {
-      await expect(
-        users.connect(wallet2).changePassword(NEW_HASHED_PASSWORD),
-        'not approved'
-      ).to.be.revertedWith('Users:')
-      await expect(
-        users.connect(wallet3).changePassword(NEW_HASHED_PASSWORD),
-        'not registered'
-      ).to.be.revertedWith('Users:')
-    })
-
-    it('should revert if same new password', async function () {
-      await expect(
-        users.connect(wallet1).changePassword(NEW_HASHED_PASSWORD)
-      ).to.be.revertedWith('Users: Passwords must be different')
-    })
-  })
-
-  describe('forgotWallet', function () {
-    let forgotWalletCall
-    beforeEach(async function () {
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID) // [wallet1.address]
-      await users.connect(owner).acceptUser(1)
-      forgotWalletCall = await users
-        .connect(wallet3)
-        .forgotWallet(HASHED_PASSWORD, 1) // [wallet1.address, wallet3.address]
+      recoverAccountCall = await users
+        .connect(owner)
+        .recoverAccount(1, wallet5.address)
     })
 
     it('should add the wallet in the list of user 1', async function () {
-      const walletList = await users.userWalletList(1)
-      expect(walletList[1]).to.equal(wallet3.address)
+      const struct = await users.userInfo(1)
+      expect(struct.walletList[1]).to.equal(wallet5.address)
     })
 
     it('should add the pointer', async function () {
-      expect(await users.profileID(wallet3.address)).to.equal(1)
-    })
-
-    it('should revert if wrong password', async function () {
-      await expect(
-        users.connect(wallet4).forgotWallet(NEW_HASHED_PASSWORD, 1),
-        'wrong password'
-      ).to.be.revertedWith('Users: incorrect password')
+      expect(await users.profileID(wallet5.address)).to.equal(1)
     })
 
     it('should emit a ProfileRecovered event', async function () {
-      expect(forgotWalletCall)
+      expect(recoverAccountCall)
         .to.emit(users, 'ProfileRecovered')
-        .withArgs(wallet3.address, 1)
-      // await expect(contract.function()) => TX test (revert or event emit)
-      // expect(await contract.function()) => function (result) test
+        .withArgs(wallet5.address, 1)
+    })
+
+    it('should revert if its not the owner', async function () {
+      await expect(
+        users.connect(wallet3).recoverAccount(1, wallet4.address)
+      ).to.be.revertedWith('Ownable:')
+    })
+
+    it('should revert if wallet is already registered', async function () {
+      await expect(
+        users.connect(owner).recoverAccount(1, wallet1.address)
+      ).to.be.revertedWith('Users: this wallet is already registered')
+    })
+
+    it('should revert if user is not approved', async function () {
+      await expect(
+        users.connect(owner).recoverAccount(3, wallet6.address)
+      ).to.be.revertedWith('Users: user must be approved')
     })
   })
 
   describe('editProfile', function () {
     let editProfileCall
     beforeEach(async function () {
-      await users.connect(wallet1).register(HASHED_PASSWORD, CID, CID)
+      await users.connect(wallet1).register(CID, CID)
       await users.connect(owner).acceptUser(1)
       editProfileCall = await users.connect(wallet1).editProfile('newCID')
     })
 
     it('should change the struct', async function () {
-      expect(await users.userProfile(1)).to.equal('newCID')
+      const struct = await users.userInfo(1)
+      expect(struct.profileCID).to.equal('newCID')
     })
 
     it('should emit an Edited event', async function () {

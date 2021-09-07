@@ -4,9 +4,10 @@ pragma solidity ^0.8.0;
 
 import "./IUsers.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "./Users.sol";
+import "./Reviews.sol";
+import "./Comments.sol";
 
 /**
  * @title   Article NFT
@@ -20,13 +21,16 @@ import "./Users.sol";
  *
  */
 
-contract Articles is ERC721Enumerable, Ownable, IUsers {
+contract Articles is ERC721Enumerable, IUsers {
     using Counters for Counters.Counter;
 
     //storage
     Counters.Counter private _articleID;
     Users private _users;
     mapping(uint256 => Article) private _article;
+
+    Comments private _comments;
+    Reviews private _reviews;
 
     /**
      * @notice              Events
@@ -35,12 +39,17 @@ contract Articles is ERC721Enumerable, Ownable, IUsers {
      * @param articleID     article's token ID
      * @param abstractCID   ipfs CID of the abstract
      * */
-    event Published(address indexed author, uint256 articleID, string abstractCID);
+    event Published(address indexed author, uint256 indexed articleID, string abstractCID);
 
     event ArticleBanned(uint256 indexed articleID);
 
     modifier onlyUser() {
         require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
+        _;
+    }
+
+    modifier onlyOwner() {
+        require(_users.owner() == msg.sender, "Users: caller is not the owner");
         _;
     }
 
@@ -64,18 +73,17 @@ contract Articles is ERC721Enumerable, Ownable, IUsers {
         address[] coAuthor;
         uint256[] comments;
         uint256[] reviews;
-        //metrics
     }
 
     /**
      * @notice              Constructor
      * @dev                 The parameter {owner_} is set in case the deployer is different from the owner (see Users.sol)
-     * @param owner_        address of the owner (see Users.sol)
      * @param usersContract address of Users.sol
      * */
-    constructor(address owner_, address usersContract) Ownable() ERC721("Article", "ART") {
+    constructor(address usersContract) ERC721("Article", "ART") {
         _users = Users(usersContract);
-        transferOwnership(owner_);
+        _reviews = new Reviews(address(this), address(_users));
+        _comments = new Comments(address(this), address(_reviews), address(_users));
     }
 
     // external
@@ -107,13 +115,13 @@ contract Articles is ERC721Enumerable, Ownable, IUsers {
     }
 
     function fillReviewsArray(uint256 articleID, uint256 reviewID) public returns (bool) {
-        // check needed
+        require(msg.sender == address(_reviews), "Articles: this function is only callable by Reviews.sol");
         _article[articleID].reviews.push(reviewID);
         return true;
     }
 
     function fillCommentsArray(uint256 articleID, uint256 commentID) public returns (bool) {
-        // check needed
+        require(msg.sender == address(_comments), "Articles: this function is only callable by Comments.sol");
         _article[articleID].comments.push(commentID);
         return true;
     }
@@ -126,8 +134,12 @@ contract Articles is ERC721Enumerable, Ownable, IUsers {
         return _article[articleID];
     }
 
-    function nbOfArticles() public view returns (uint256) {
-        return _articleID.current();
+    function commentsAddress() public view returns (address) {
+        return address(_comments);
+    }
+
+    function reviewsAddress() public view returns (address) {
+        return address(_reviews);
     }
 
     // internal
