@@ -44,15 +44,11 @@ describe('Articles', function () {
     await users.deployed()
 
     Articles = await ethers.getContractFactory(CONTRACT_NAME)
-    articles = await Articles.connect(dev).deploy(owner.address, users.address)
+    articles = await Articles.connect(dev).deploy(users.address)
     await articles.deployed()
   })
 
   describe('Deployment', function () {
-    it('should asign owner as the owner', async function () {
-      expect(await articles.owner()).to.be.equal(owner.address)
-    })
-
     it('should return the user contract address', async function () {
       expect(await articles.usersContractAddress()).to.be.equal(users.address)
     })
@@ -162,7 +158,7 @@ describe('Articles', function () {
 
     it('should revert if not owner attempt to ban article', async function () {
       await expect(articles.connect(wallet2).banArticle(1)).to.be.revertedWith(
-        'Ownable:'
+        'Users:'
       )
     })
 

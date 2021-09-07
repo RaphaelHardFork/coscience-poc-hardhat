@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IUsers.sol";
 import "./Articles.sol";
 import "./Reviews.sol";
@@ -19,7 +18,7 @@ import "./Reviews.sol";
  * changeBaseURI: in case gateways out of function
  * */
 
-contract Comments is ERC721Enumerable, Ownable, IUsers {
+contract Comments is ERC721Enumerable, IUsers {
     using Counters for Counters.Counter;
     // storage & event
     Articles private _articles;
@@ -37,6 +36,11 @@ contract Comments is ERC721Enumerable, Ownable, IUsers {
         _;
     }
 
+    modifier onlyOwner() {
+        require(_users.owner() == msg.sender, "Users: caller is not the owner");
+        _;
+    }
+
     struct Comment {
         bool contentBanned;
         uint256 id;
@@ -49,15 +53,14 @@ contract Comments is ERC721Enumerable, Ownable, IUsers {
     }
 
     constructor(
-        address owner_,
         address articlesContract,
         address reviewsContract,
         address usersContract
-    ) Ownable() ERC721("Comment", "COM") {
+    ) ERC721("Comment", "COM") {
         _articles = Articles(articlesContract);
         _reviews = Reviews(reviewsContract);
         _users = Users(usersContract);
-        transferOwnership(owner_);
+
         // baseURI override and public
     }
 

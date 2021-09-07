@@ -87,21 +87,16 @@ describe('Reviews', function () {
     await users.deployed()
 
     Articles = await ethers.getContractFactory('Articles')
-    articles = await Articles.connect(dev).deploy(owner.address, users.address)
+    articles = await Articles.connect(dev).deploy(users.address)
     await articles.deployed()
 
     Reviews = await ethers.getContractFactory(CONTRACT_NAME)
-    reviews = await Reviews.connect(dev).deploy(
-      owner.address,
-      articles.address,
-      users.address
-    )
+    reviews = await Reviews.connect(dev).deploy(articles.address, users.address)
     await reviews.deployed()
   })
 
   describe('Deployment', function () {
     it('should deploy correctly the contract ', async function () {
-      expect(await reviews.owner()).to.equal(owner.address)
       expect(await reviews.usersContractAddress()).to.equal(users.address)
       expect(await reviews.articlesContractAddress()).to.equal(articles.address)
     })

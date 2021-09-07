@@ -21,7 +21,8 @@ Need owner auth functions
 ```js
 {
   "Users": {
-    "rinkeby": { "address": "0xB53a11f8f9Dcb5379Dd3fE7AD1649727b18Ba491" }
+    "rinkeby": { "
+address": "0xB53a11f8f9Dcb5379Dd3fE7AD1649727b18Ba491" }
   },
   "Articles": {
     "rinkeby": { "address": "0xc4D31789081B2EB0f1e65A3Cdf87AF17f1408817" }

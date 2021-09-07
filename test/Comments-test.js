@@ -133,20 +133,15 @@ describe('Comments', function () {
     await users.deployed()
 
     Articles = await ethers.getContractFactory('Articles')
-    articles = await Articles.connect(dev).deploy(owner.address, users.address)
+    articles = await Articles.connect(dev).deploy(users.address)
     await articles.deployed()
 
     Reviews = await ethers.getContractFactory('Reviews')
-    reviews = await Reviews.connect(dev).deploy(
-      owner.address,
-      articles.address,
-      users.address
-    )
+    reviews = await Reviews.connect(dev).deploy(articles.address, users.address)
     await reviews.deployed()
 
     Comments = await ethers.getContractFactory(CONTRACT_NAME)
     comments = await Comments.connect(dev).deploy(
-      owner.address,
       articles.address,
       reviews.address,
       users.address
@@ -187,7 +182,6 @@ describe('Comments', function () {
 
   describe('Deployment', function () {
     it('should deploy correctly the contract', async function () {
-      expect(await comments.owner()).to.be.equal(owner.address)
       expect(await comments.usersContractAddress()).to.be.equal(users.address)
       expect(await comments.articlesContractAddress()).to.be.equal(
         articles.address
@@ -311,7 +305,7 @@ describe('Comments', function () {
     })
     it('should revert if user is not the owner', async function () {
       await expect(comments.connect(wallet2).banPost(1)).to.be.revertedWith(
-        'Ownable:'
+        'Users:'
       )
     })
   })
