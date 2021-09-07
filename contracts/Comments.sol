@@ -28,8 +28,11 @@ contract Comments is ERC721Enumerable, IUsers {
     Counters.Counter private _commentID;
     mapping(uint256 => Comment) private _comment;
 
+    mapping(uint256 => mapping(uint256 => bool)) private _vote;
+
     event Posted(address indexed poster, uint256 indexed commentID, address indexed target, uint256 targetID);
     event CommentBanned(uint256 indexed commentID);
+    event Voted(uint256 indexed commentID, uint256 indexed userID);
 
     modifier onlyUser() {
         require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
@@ -44,6 +47,7 @@ contract Comments is ERC721Enumerable, IUsers {
     struct Comment {
         bool contentBanned;
         uint256 id;
+        uint256 vote;
         uint256 targetID;
         address target;
         address author;
@@ -102,13 +106,17 @@ contract Comments is ERC721Enumerable, IUsers {
         return true;
     }
 
-    function commentInfo(uint256 commentID) public view returns (Comment memory) {
-        return _comment[commentID];
+    function vote(uint256 commentID) public returns (bool) {
+        uint256 userID = _users.profileID(msg.sender);
+        require(_vote[userID][commentID] == false, "Comments: you already vote for this comment");
+        _comment[commentID].vote += 1;
+        _vote[userID][commentID] = true;
+        emit Voted(commentID, userID);
+        return true;
     }
 
-    // is useful? enumerable? two way to find the list?
-    function nbOfComment() public view returns (uint256) {
-        return _commentID.current();
+    function commentInfo(uint256 commentID) public view returns (Comment memory) {
+        return _comment[commentID];
     }
 
     function _beforeTokenTransfer(

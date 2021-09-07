@@ -5,6 +5,10 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IUsers.sol";
+import "./Articles.sol";
+import "./Reviews.sol";
+import "./Comments.sol";
+import "./Governance.sol";
 
 /**
  * @title   Users and Owners
@@ -31,6 +35,12 @@ contract Users is Ownable, IUsers {
 
     /// @dev    A mapping to get the user ID with the user wallet address
     mapping(address => uint256) private _userIdPointer;
+
+    // governance address
+    Articles private _articles;
+    Reviews private _reviews;
+    Comments private _comments;
+    Governance private _governance;
 
     /**
      * @notice  Events
@@ -102,6 +112,11 @@ contract Users is Ownable, IUsers {
      * */
     constructor(address owner_) Ownable() {
         transferOwnership(owner_);
+        _articles = new Articles(address(this));
+        _reviews = new Reviews(address(_articles), address(this));
+        _comments = new Comments(address(_articles), address(_reviews), address(this));
+        _articles.setContracts(address(_reviews));
+        _governance = new Governance(address(this), address(_articles), address(_reviews), address(_comments));
     }
 
     /**
@@ -157,9 +172,13 @@ contract Users is Ownable, IUsers {
      * @param userID_   user ID is specify to get access to the corresponding Struct User
      */
     function acceptUser(uint256 userID_) public onlyOwner returns (bool) {
-        require(_user[userID_].status == WhiteList.Pending, "Users: user is not registered or already approved");
-        _user[userID_].status = WhiteList.Approved;
-        emit Approved(userID_);
+        if (nbOfUsers() == 5) {
+            transferOwnership(address(_governance));
+        } else {
+            require(_user[userID_].status == WhiteList.Pending, "Users: user is not registered or already approved");
+            _user[userID_].status = WhiteList.Approved;
+            emit Approved(userID_);
+        }
         return true;
     }
 
@@ -227,6 +246,10 @@ contract Users is Ownable, IUsers {
         return _user[userID];
     }
 
+    function userStatus(uint256 userID) public view returns (WhiteList) {
+        return _user[userID].status;
+    }
+
     function nbOfUsers() public view returns (uint256) {
         return _userID.current();
     }
@@ -241,5 +264,21 @@ contract Users is Ownable, IUsers {
     function isUser(address account) public view returns (bool) {
         uint256 userID = _userIdPointer[account];
         return _user[userID].status == WhiteList.Approved;
+    }
+
+    function articleAddress() public view returns (address) {
+        return address(_articles);
+    }
+
+    function reviewAddress() public view returns (address) {
+        return address(_reviews);
+    }
+
+    function commentAddress() public view returns (address) {
+        return address(_comments);
+    }
+
+    function governanceAddress() public view returns (address) {
+        return address(_governance);
     }
 }

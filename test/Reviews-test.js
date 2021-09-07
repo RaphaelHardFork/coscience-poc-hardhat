@@ -4,51 +4,7 @@ const { expect } = require('chai')
 const { ethers } = require('hardhat')
 
 const CONTRACT_NAME = 'Reviews'
-const ADDRESS_ZERO = ethers.constants.AddressZero
 const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
-
-// UTILS
-// Pure function to create a JS object of the review list
-
-const jsReviewList = async (articles, reviews, listOfId) => {
-  const reviewList = []
-  let tab = []
-
-  if (listOfId === undefined) {
-    const nb = await reviews.nbOfReview()
-    for (let i = 1; i <= nb.toNumber(); i++) {
-      console.log('push')
-      tab.push(i)
-    }
-  } else {
-    tab = listOfId
-  }
-
-  for (const i of tab) {
-    const r = await reviews.reviewInfo(i)
-    const a = await articles.articleInfo(r.targetID.toNumber())
-    const comments = r.comments.map((id) => id.toNumber())
-    const on = {
-      id: a.id.toString(),
-      author: a.author,
-      coAuthor: a.coAuthor,
-      contentBanned: a.contentBanned,
-      abstractCID: a.abstractCID,
-      contentCID: a.contentCID,
-    }
-
-    reviewList.push({
-      id: r.id.toString(),
-      author: r.author,
-      targetID: r.targetID.toNumber(),
-      contentBanned: r.contentBanned,
-      contentCID: r.contentCID,
-      comments,
-      on,
-    })
-  }
-  return reviewList
-}
 
 describe('Reviews', function () {
   let users,

@@ -11,6 +11,7 @@ const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
 describe('Users', function () {
   let Users,
     users,
+    governance,
     dev,
     owner,
     wallet1,
@@ -26,12 +27,17 @@ describe('Users', function () {
     Users = await ethers.getContractFactory(CONTRACT_NAME)
     users = await Users.connect(dev).deploy(owner.address)
     await users.deployed()
+
+    const Governance = await ethers.getContractFactory('Governance')
+    const governanceAddress = await users.governanceAddress()
+    governance = await Governance.attach(governanceAddress)
   })
 
   describe('Deployment', function () {
     it('should asign owner as the owner', async function () {
       expect(await users.owner()).to.equal(owner.address)
     })
+    // deployment of others contracts are tested in the appropriate file
   })
 
   describe('Register', function () {
@@ -95,10 +101,21 @@ describe('Users', function () {
         users.connect(owner).acceptUser(3),
         'not registered'
       ).to.be.revertedWith('Users: user is not registered or already approved')
-      await expect(
-        users.connect(owner).acceptUser(1),
-        'already approved'
-      ).to.be.revertedWith('Users: user is not registered or already approved')
+    })
+
+    it('should transfer ownership on the 5th user', async function () {
+      await users.connect(owner).acceptUser(2)
+      await users.connect(wallet3).register(CID, CID)
+      await users.connect(wallet4).register(CID, CID)
+      await users.connect(wallet5).register(CID, CID)
+      await users.connect(owner).acceptUser(3)
+      await users.connect(owner).acceptUser(4)
+      await users.connect(owner).acceptUser(5)
+      const struct = await users.userInfo(5)
+      expect(struct.status, 'not change status').to.equal(1) // 1 = Pending
+      expect(await users.governanceAddress(), 'address').to.equal(
+        governance.address
+      )
     })
   })
 

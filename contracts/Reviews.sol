@@ -27,8 +27,11 @@ contract Reviews is ERC721Enumerable, IUsers {
     Counters.Counter private _reviewID;
     mapping(uint256 => Review) private _review;
 
+    mapping(uint256 => mapping(uint256 => bool)) private _vote;
+
     event Posted(address indexed poster, uint256 indexed reviewID, uint256 targetID);
     event ReviewBanned(uint256 indexed _reviewID);
+    event Voted(Vote indexed choice, uint256 indexed reviewID, uint256 indexed userID);
 
     modifier onlyUser() {
         require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
@@ -44,6 +47,7 @@ contract Reviews is ERC721Enumerable, IUsers {
         bool contentBanned;
         address author;
         uint256 id;
+        int256 vote;
         uint256 targetID;
         string contentCID;
         uint256[] comments;
@@ -79,11 +83,6 @@ contract Reviews is ERC721Enumerable, IUsers {
         return super.supportsInterface(interfaceId);
     }
 
-    // is useful? enumerable? two way to find the list?
-    function nbOfReview() public view returns (uint256) {
-        return _reviewID.current();
-    }
-
     function banPost(uint256 reviewID) public onlyOwner returns (bool) {
         _review[reviewID].contentBanned = true;
 
@@ -92,8 +91,21 @@ contract Reviews is ERC721Enumerable, IUsers {
     }
 
     function fillCommentsArray(uint256 reviewID, uint256 commentID) public returns (bool) {
-        require(msg.sender == _articles.commentsAddress(), "Reviews: this function is only callable by Comments.sol");
+        require(msg.sender == _users.commentAddress(), "Reviews: this function is only callable by Comments.sol");
         _review[reviewID].comments.push(commentID);
+        return true;
+    }
+
+    function vote(Vote choice, uint256 reviewID) public returns (bool) {
+        uint256 userID = _users.profileID(msg.sender);
+        require(_vote[userID][reviewID] == false, "Review: you already vote for this review.");
+        if (choice == Vote.Yes) {
+            _review[reviewID].vote += 1;
+        } else {
+            _review[reviewID].vote -= 1;
+        }
+        _vote[userID][reviewID] = true;
+        emit Voted(choice, reviewID, userID);
         return true;
     }
 

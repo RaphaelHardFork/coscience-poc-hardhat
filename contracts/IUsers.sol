@@ -8,4 +8,9 @@ interface IUsers {
         Pending,
         Approved
     }
+
+    enum Vote {
+        No,
+        Yes
+    }
 }

@@ -29,8 +29,12 @@ contract Articles is ERC721Enumerable, IUsers {
     Users private _users;
     mapping(uint256 => Article) private _article;
 
-    Comments private _comments;
-    Reviews private _reviews;
+    // has vote? userID => articleID =>
+    mapping(uint256 => mapping(uint256 => bool)) private _validityVote;
+    mapping(uint256 => mapping(uint256 => bool)) private _importanceVote;
+
+    address private _reviews;
+    address private _comments;
 
     /**
      * @notice              Events
@@ -40,6 +44,9 @@ contract Articles is ERC721Enumerable, IUsers {
      * @param abstractCID   ipfs CID of the abstract
      * */
     event Published(address indexed author, uint256 indexed articleID, string abstractCID);
+
+    event ValidityVoted(Vote indexed choice, uint256 indexed articleID, uint256 indexed userID);
+    event ImportanceVoted(Vote indexed choice, uint256 indexed articleID, uint256 indexed userID);
 
     event ArticleBanned(uint256 indexed articleID);
 
@@ -67,6 +74,8 @@ contract Articles is ERC721Enumerable, IUsers {
     struct Article {
         bool contentBanned;
         uint256 id;
+        int256 validity;
+        int256 importance;
         address author;
         string abstractCID;
         string contentCID;
@@ -82,8 +91,13 @@ contract Articles is ERC721Enumerable, IUsers {
      * */
     constructor(address usersContract) ERC721("Article", "ART") {
         _users = Users(usersContract);
-        _reviews = new Reviews(address(this), address(_users));
-        _comments = new Comments(address(this), address(_reviews), address(_users));
+    }
+
+    function setContracts(address reviews) public returns (bool) {
+        require(msg.sender == address(_users), "Articles: this function is not allowed");
+        _reviews = reviews;
+        // _comments = comments;
+        return true;
     }
 
     // external
@@ -115,14 +129,43 @@ contract Articles is ERC721Enumerable, IUsers {
     }
 
     function fillReviewsArray(uint256 articleID, uint256 reviewID) public returns (bool) {
-        require(msg.sender == address(_reviews), "Articles: this function is only callable by Reviews.sol");
+        require(msg.sender == _reviews, "Articles: this function is only callable by Reviews.sol");
         _article[articleID].reviews.push(reviewID);
         return true;
     }
 
     function fillCommentsArray(uint256 articleID, uint256 commentID) public returns (bool) {
-        require(msg.sender == address(_comments), "Articles: this function is only callable by Comments.sol");
+        require(msg.sender == _comments, "Articles: this function is only callable by Comments.sol");
         _article[articleID].comments.push(commentID);
+        return true;
+    }
+
+    function voteValidity(Vote choice, uint256 articleID) public returns (bool) {
+        uint256 userID = _users.profileID(msg.sender);
+        require(_validityVote[userID][articleID] == false, "Articles: you already vote on validity for this article.");
+        if (choice == Vote.Yes) {
+            _article[articleID].validity += 1;
+        } else {
+            _article[articleID].validity -= 1;
+        }
+        _validityVote[userID][articleID] = true;
+        emit ValidityVoted(choice, articleID, userID);
+        return true;
+    }
+
+    function voteImportance(Vote choice, uint256 articleID) public returns (bool) {
+        uint256 userID = _users.profileID(msg.sender);
+        require(
+            _importanceVote[userID][articleID] == false,
+            "Articles: you already vote on importance for this article."
+        );
+        if (choice == Vote.Yes) {
+            _article[articleID].validity += 1;
+        } else {
+            _article[articleID].validity -= 1;
+        }
+        _importanceVote[userID][articleID] = true;
+        emit ImportanceVoted(choice, articleID, userID);
         return true;
     }
 
@@ -132,14 +175,6 @@ contract Articles is ERC721Enumerable, IUsers {
 
     function articleInfo(uint256 articleID) public view returns (Article memory) {
         return _article[articleID];
-    }
-
-    function commentsAddress() public view returns (address) {
-        return address(_comments);
-    }
-
-    function reviewsAddress() public view returns (address) {
-        return address(_reviews);
     }
 
     // internal
