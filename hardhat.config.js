@@ -7,6 +7,7 @@ require('dotenv').config()
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID
 const PRIVATE_KEY = process.env.PRIVATE_KEY
+// 0xb71b0f260De9DF30a9a185D95029fe6Ef535BA71
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -40,6 +41,16 @@ module.exports = {
       url: `https://goerli.infura.io/v3/${INFURA_PROJECT_ID}`,
       accounts: [`0x${PRIVATE_KEY}`],
     },
+    bscTestnet: {
+      url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+      chainId: 97,
+      gasPrice: 20000000000,
+      accounts: [`0x${PRIVATE_KEY}`],
+    },
+    polygonTestnet: {
+      url: 'https://rpc-mumbai.maticvigil.com',
+      accounts: [`0x${PRIVATE_KEY}`],
+    },
   },
   docgen: {
     path: './docs',
@@ -52,7 +63,7 @@ module.exports = {
   },
   contractSizer: {
     alphaSort: true,
-    runOnCompile: true,
+    runOnCompile: false,
     disambiguatePaths: false,
   },
 }

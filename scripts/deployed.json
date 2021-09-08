@@ -1,14 +1,22 @@
 {
   "Users": {
-    "rinkeby": { "address": "0x2DBc0235e6565c70f81Aa7F06BE51a57dad086B4" }
+    "rinkeby": { "address": "0x2c48E3F532786744b9cceB935c93e7859298adDe" },
+    "goerli": { "address": "0x2c48E3F532786744b9cceB935c93e7859298adDe" },
+    "bscTestnet": { "address": "0x2c48E3F532786744b9cceB935c93e7859298adDe" },
+    "polygonTestnet": {
+      "address": "0x2c48E3F532786744b9cceB935c93e7859298adDe"
+    }
   },
   "Articles": {
-    "rinkeby": { "address": "0xFA726c39CeB254F762C6b52CB9921f72aB0a20Dd" }
+    "rinkeby": { "address": "0x20B05d0Dfc12A4C71b55AfC14eCC5C452172c25b" }
   },
   "Reviews": {
-    "rinkeby": { "address": "0x7A2f775EAcA55FA6360618253CC8957Cd8501cD0" }
+    "rinkeby": { "address": "0xeAD88fFeee136e6a5EE7bdD5bb3007E424258019" }
   },
   "Comments": {
-    "rinkeby": { "address": "0x77943c71CF2d1da0E1678ac09581A5B149eA9454" }
+    "rinkeby": { "address": "0x5DF53542eC8701f8cd6e23159305952ce394BDAE" }
+  },
+  "Governance": {
+    "rinkeby": { "address": "0x3119C752010C65D0D1CC7086052d9Be13707fF17" }
   }
 }

@@ -4,7 +4,7 @@ const hre = require('hardhat')
 const { deployed } = require('./deployed')
 const { readFile } = require('fs/promises')
 
-const CONTRACT_NAME = 'Comments'
+const CONTRACT_NAME = 'Governance'
 
 const main = async () => {
   const [deployer] = await ethers.getSigners()
@@ -16,13 +16,16 @@ const main = async () => {
   const ARTICLES_CONTRACT =
     CONTRACTS_DEPLOYED.Articles[hre.network.name].address
   const REVIEWS_CONTRACT = CONTRACTS_DEPLOYED.Reviews[hre.network.name].address
+  const COMMENTS_CONTRACT =
+    CONTRACTS_DEPLOYED.Comments[hre.network.name].address
 
   console.log('Deploying contracts with the account:', deployer.address)
   const Comments = await hre.ethers.getContractFactory(CONTRACT_NAME)
   const comments = await Comments.deploy(
     USERS_CONTRACT,
     ARTICLES_CONTRACT,
-    REVIEWS_CONTRACT
+    REVIEWS_CONTRACT,
+    COMMENTS_CONTRACT
   )
   await comments.deployed()
 

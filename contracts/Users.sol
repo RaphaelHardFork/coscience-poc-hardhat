@@ -38,10 +38,7 @@ contract Users is Ownable, IUsers {
     mapping(address => uint256) private _userIdPointer;
 
     // governance address
-    address private _articles; // default address(0)?
-    address private _reviews;
-    address private _comments;
-    Governance private _governance;
+    address private _governance;
 
     /**
      * @notice  Events
@@ -115,18 +112,9 @@ contract Users is Ownable, IUsers {
         transferOwnership(owner_);
     }
 
-    function setContracts(
-        address articles_,
-        address reviews_,
-        address comments_
-    ) public returns (bool) {
-        require(_articles == address(0), "Users: this function is callable only one time");
-        _articles = articles_;
-        _reviews = reviews_;
-        _comments = comments_;
-
-        _governance = new Governance(address(this), articles_, reviews_, comments_);
-
+    function setContracts(address governance_) public returns (bool) {
+        require(_governance == address(0), "Users: this function is callable only one time");
+        _governance = governance_;
         return true;
     }
 
@@ -280,9 +268,5 @@ contract Users is Ownable, IUsers {
     function isUser(address account) public view returns (bool) {
         uint256 userID = _userIdPointer[account];
         return _user[userID].status == WhiteList.Approved;
-    }
-
-    function governanceAddress() public view returns (address) {
-        return address(_governance);
     }
 }

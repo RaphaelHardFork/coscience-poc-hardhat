@@ -9,9 +9,11 @@ const ADDRESS_ZERO = ethers.constants.AddressZero
 const CID = 'Qmfdfxchesocnfdfrfdf54SDDFsDS'
 
 describe('Users', function () {
-  let Users,
-    users,
+  let users,
     governance,
+    articles,
+    reviews,
+    comments,
     dev,
     owner,
     wallet1,
@@ -24,16 +26,47 @@ describe('Users', function () {
   beforeEach(async function () {
     ;[dev, owner, wallet1, wallet2, wallet3, wallet4, wallet5, wallet6] =
       await ethers.getSigners()
-    Users = await ethers.getContractFactory(CONTRACT_NAME)
+
+    const Users = await ethers.getContractFactory(CONTRACT_NAME)
     users = await Users.connect(dev).deploy(owner.address)
     await users.deployed()
+
+    const Articles = await ethers.getContractFactory('Articles')
+    articles = await Articles.connect(dev).deploy(users.address)
+    await articles.deployed()
+
+    const Reviews = await ethers.getContractFactory('Reviews')
+    reviews = await Reviews.connect(dev).deploy(users.address, articles.address)
+    await reviews.deployed()
+
+    const Comments = await ethers.getContractFactory('Comments')
+    comments = await Comments.connect(dev).deploy(
+      users.address,
+      articles.address,
+      reviews.address
+    )
+    await comments.deployed()
+
+    // Set contracts address
+    await articles.setContracts(reviews.address, comments.address)
+
+    const Governance = await ethers.getContractFactory('Governance')
+    governance = await Governance.connect(dev).deploy(
+      users.address,
+      articles.address,
+      reviews.address,
+      comments.address
+    )
+
+    // Set Contracts
+    await users.setContracts(governance.address)
+    // END OF DEPLOYMENT
   })
 
   describe('Deployment', function () {
     it('should asign owner as the owner', async function () {
       expect(await users.owner()).to.equal(owner.address)
     })
-    // deployment of others contracts are tested in the appropriate file
   })
 
   describe('Register', function () {
@@ -70,36 +103,11 @@ describe('Users', function () {
   })
 
   describe('acceptUser', function () {
-    let acceptUserCall, articles, reviews, comments, governance
+    let acceptUserCall
     beforeEach(async function () {
       await users.connect(wallet1).register(CID, CID)
       acceptUserCall = await users.connect(owner).acceptUser(1)
       await users.connect(wallet2).register(CID, CID)
-
-      // Deployment of contracts
-      const Articles = await ethers.getContractFactory('Articles')
-      articles = await Articles.connect(dev).deploy(users.address)
-      await articles.deployed()
-
-      // get address of deployed contracts
-      const Reviews = await ethers.getContractFactory('Reviews')
-      const reviewsAddress = await articles.reviewsAddress() // function Articles.sol
-      reviews = await Reviews.attach(reviewsAddress)
-
-      const Comments = await ethers.getContractFactory('Comments')
-      const commentsAddress = await articles.commentsAddress()
-      comments = await Comments.attach(commentsAddress)
-
-      // Deployment of governance
-      await users.setContracts(
-        articles.address,
-        reviews.address,
-        comments.address
-      )
-
-      const Governance = await ethers.getContractFactory('Governance')
-      const governanceAddress = await users.governanceAddress()
-      governance = await Governance.attach(governanceAddress)
     })
 
     it('should change the status', async function () {

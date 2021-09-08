@@ -33,8 +33,8 @@ contract Articles is ERC721Enumerable, IUsers {
     mapping(uint256 => mapping(uint256 => bool)) private _validityVote;
     mapping(uint256 => mapping(uint256 => bool)) private _importanceVote;
 
-    Reviews private _reviews;
-    Comments private _comments;
+    address private _reviews;
+    address private _comments;
 
     /**
      * @notice              Events
@@ -91,8 +91,13 @@ contract Articles is ERC721Enumerable, IUsers {
      * */
     constructor(address usersContract) ERC721("Article", "ART") {
         _users = Users(usersContract);
-        _reviews = new Reviews(address(this), address(_users));
-        _comments = new Comments(address(this), address(_reviews), address(_users));
+    }
+
+    function setContracts(address reviews_, address comments_) public returns (bool) {
+        require(_reviews == address(0), "Articles: this function is callable only one time");
+        _reviews = reviews_;
+        _comments = comments_;
+        return true;
     }
 
     function publish(
@@ -121,7 +126,7 @@ contract Articles is ERC721Enumerable, IUsers {
     }
 
     function fillReviewsArray(uint256 articleID, uint256 reviewID) public returns (bool) {
-        require(msg.sender == address(_reviews), "Articles: this function is only callable by Reviews.sol");
+        require(msg.sender == _reviews, "Articles: this function is only callable by Reviews.sol");
         _article[articleID].reviews.push(reviewID);
         return true;
     }
@@ -132,7 +137,8 @@ contract Articles is ERC721Enumerable, IUsers {
         return true;
     }
 
-    function voteValidity(Vote choice, uint256 articleID) public returns (bool) {
+    function voteValidity(Vote choice, uint256 articleID) public onlyUser returns (bool) {
+        require(isArticle(articleID), "Articles: cannot vote on inexistant Article.");
         uint256 userID = _users.profileID(msg.sender);
         require(_validityVote[userID][articleID] == false, "Articles: you already vote on validity for this article.");
         if (choice == Vote.Yes) {
@@ -145,7 +151,8 @@ contract Articles is ERC721Enumerable, IUsers {
         return true;
     }
 
-    function voteImportance(Vote choice, uint256 articleID) public returns (bool) {
+    function voteImportance(Vote choice, uint256 articleID) public onlyUser returns (bool) {
+        require(isArticle(articleID), "Articles: cannot vote on inexistant Article.");
         uint256 userID = _users.profileID(msg.sender);
         require(
             _importanceVote[userID][articleID] == false,
@@ -161,12 +168,8 @@ contract Articles is ERC721Enumerable, IUsers {
         return true;
     }
 
-    function reviewsAddress() public view returns (address) {
-        return address(_reviews);
-    }
-
     function commentsAddress() public view returns (address) {
-        return address(_comments);
+        return _comments;
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable) returns (bool) {
@@ -175,6 +178,14 @@ contract Articles is ERC721Enumerable, IUsers {
 
     function articleInfo(uint256 articleID) public view returns (Article memory) {
         return _article[articleID];
+    }
+
+    function isArticle(uint256 articleID) public view returns (bool) {
+        if (_article[articleID].author == address(0)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     // internal

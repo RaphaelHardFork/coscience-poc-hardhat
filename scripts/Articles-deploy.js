@@ -16,7 +16,7 @@ const main = async () => {
 
   console.log('Deploying contracts with the account:', deployer.address)
   const Articles = await hre.ethers.getContractFactory(CONTRACT_NAME)
-  const articles = await Articles.deploy(deployer.address, USERS_CONTRACT)
+  const articles = await Articles.deploy(USERS_CONTRACT)
   await articles.deployed()
 
   await deployed(CONTRACT_NAME, hre.network.name, articles.address)

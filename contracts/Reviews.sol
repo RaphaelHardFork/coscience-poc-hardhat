@@ -55,16 +55,14 @@ contract Reviews is ERC721Enumerable, IUsers {
         // reviews only on articles
     }
 
-    constructor(address articlesContract, address usersContract) ERC721("Review", "REV") {
-        _articles = Articles(articlesContract);
+    constructor(address usersContract, address articlesContract) ERC721("Review", "REV") {
         _users = Users(usersContract);
-
-        // baseURI override and public
+        _articles = Articles(articlesContract);
     }
 
     // post a review
     function post(string memory contentCID, uint256 targetID) public onlyUser returns (uint256) {
-        // isArticle?
+        require(_articles.isArticle(targetID), "Reviews: article ID does not exist");
         _reviewID.increment();
         uint256 reviewID = _reviewID.current();
         _safeMint(msg.sender, reviewID);
@@ -98,6 +96,7 @@ contract Reviews is ERC721Enumerable, IUsers {
     }
 
     function vote(Vote choice, uint256 reviewID) public returns (bool) {
+        require(isReview(reviewID), "Reviews: cannot vote on inexistant review");
         uint256 userID = _users.profileID(msg.sender);
         require(_vote[userID][reviewID] == false, "Review: you already vote for this review.");
         if (choice == Vote.Yes) {
@@ -112,6 +111,14 @@ contract Reviews is ERC721Enumerable, IUsers {
 
     function reviewInfo(uint256 reviewID) public view returns (Review memory) {
         return _review[reviewID];
+    }
+
+    function isReview(uint256 reviewID) public view returns (bool) {
+        if (_review[reviewID].author == address(0)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     function _beforeTokenTransfer(

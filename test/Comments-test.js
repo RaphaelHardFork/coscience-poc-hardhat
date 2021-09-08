@@ -46,14 +46,20 @@ describe('Comments', function () {
     articles = await Articles.connect(dev).deploy(users.address)
     await articles.deployed()
 
-    // get address of deployed contracts
     const Reviews = await ethers.getContractFactory('Reviews')
-    const reviewsAddress = await articles.reviewsAddress() // function Articles.sol
-    reviews = await Reviews.attach(reviewsAddress)
+    reviews = await Reviews.connect(dev).deploy(users.address, articles.address)
+    await reviews.deployed()
 
     const Comments = await ethers.getContractFactory(CONTRACT_NAME)
-    const commentsAddress = await articles.commentsAddress()
-    comments = await Comments.attach(commentsAddress)
+    comments = await Comments.connect(dev).deploy(
+      users.address,
+      articles.address,
+      reviews.address
+    )
+    await comments.deployed()
+
+    // Set contracts address
+    await articles.setContracts(reviews.address, comments.address)
   })
 
   describe('Deployment', function () {
@@ -117,6 +123,24 @@ describe('Comments', function () {
         comments.connect(wallet3).post(CID, articles.address, 1)
       ).to.be.revertedWith('Users: you must be approved to use this feature.')
     })
+
+    it('should revert if trying to post a comment on inexistant article', async function () {
+      await expect(
+        comments.connect(article1Author).post(CID, articles.address, 45)
+      ).to.be.revertedWith('Comments: cannot comment an inexistant Article')
+    })
+
+    it('should revert if trying to post a comment on inexistant review', async function () {
+      await expect(
+        comments.connect(article1Author).post(CID, reviews.address, 45)
+      ).to.be.revertedWith('Comments: cannot comment an inexistant Review')
+    })
+
+    it('should revert if trying to post a comment on inexistant comment', async function () {
+      await expect(
+        comments.connect(article1Author).post(CID, comments.address, 45)
+      ).to.be.revertedWith('Comments: cannot comment an inexistant Comment')
+    })
   })
 
   describe('ban', function () {
@@ -151,6 +175,47 @@ describe('Comments', function () {
       await expect(comments.connect(wallet1).banPost(2)).to.be.revertedWith(
         'Users: caller is not the owner'
       )
+    })
+  })
+
+  describe('vote on a comment', async function () {
+    let voteCall
+    beforeEach(async function () {
+      // post a comment
+      await users.connect(article1Author).register(CID, CID)
+      await users.connect(owner).acceptUser(1)
+      await users.connect(comment1Author).register(CID, CID)
+      await users.connect(owner).acceptUser(2)
+
+      await articles
+        .connect(article1Author)
+        .publish([wallet1.address, wallet2.address, wallet3.address], CID, CID)
+      await comments.connect(comment1Author).post(CID, articles.address, 1) // on ARTICLE 1
+
+      // vote
+      voteCall = await comments.connect(article1Author).vote(1)
+    })
+
+    it('should revert if Comment does not exist', async function () {
+      await expect(
+        comments.connect(article1Author).vote(45)
+      ).to.be.revertedWith('Comments: cannot vote on inexistant Comment.')
+    })
+
+    it('should revert if voter try to vote again', async function () {
+      await expect(comments.connect(article1Author).vote(1)).to.be.revertedWith(
+        'Comments: you already vote for this comment'
+      )
+    })
+
+    it('should increment the comment vote count', async function () {
+      const struct = await comments.commentInfo(1)
+      expect(struct.vote).to.equal(1)
+    })
+
+    it('should emit a Voted event', async function () {
+      expect(voteCall).to.emit(comments, 'Voted').withArgs(1, 1)
+      // emit Voted(commentID, userID);
     })
   })
 })

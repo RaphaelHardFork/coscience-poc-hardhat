@@ -10,6 +10,7 @@ describe('Reviews', function () {
   let users,
     reviews,
     articles,
+    comments,
     dev,
     owner,
     article1Author,
@@ -41,10 +42,20 @@ describe('Reviews', function () {
     articles = await Articles.connect(dev).deploy(users.address)
     await articles.deployed()
 
-    // get address of deployed contracts
     const Reviews = await ethers.getContractFactory(CONTRACT_NAME)
-    const reviewsAddress = await articles.reviewsAddress() // function Articles.sol
-    reviews = await Reviews.attach(reviewsAddress)
+    reviews = await Reviews.connect(dev).deploy(users.address, articles.address)
+    await reviews.deployed()
+
+    const Comments = await ethers.getContractFactory('Comments')
+    comments = await Comments.connect(dev).deploy(
+      users.address,
+      articles.address,
+      reviews.address
+    )
+    await comments.deployed()
+
+    // Set contracts address
+    await articles.setContracts(reviews.address, comments.address)
   })
 
   describe('Deployment', function () {
@@ -95,6 +106,12 @@ describe('Reviews', function () {
         'Users:'
       )
     })
+
+    it('should revert if article does not exist', async function () {
+      await expect(
+        reviews.connect(review1Author).post(CID, 45)
+      ).to.be.revertedWith('Reviews: article ID does not exist')
+    })
   })
 
   describe('NFT behavior', function () {
@@ -139,6 +156,52 @@ describe('Reviews', function () {
 
     it('should emit a ReviewBanned event', async function () {
       expect(banCall).to.emit(reviews, 'ReviewBanned').withArgs(1)
+    })
+  })
+
+  describe('vote on a review', function () {
+    let voteCall
+    beforeEach(async function () {
+      // post a review
+      await users.connect(article1Author).register(CID, CID)
+      await users.connect(review1Author).register(CID, CID)
+      await users.connect(owner).acceptUser(1)
+      await users.connect(owner).acceptUser(2)
+
+      const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+      await reviews.connect(review1Author).post(CID, 1)
+
+      // vote on a review
+      voteCall = await reviews.connect(article1Author).vote(1, 1)
+    })
+
+    it('should increment the review vote count', async function () {
+      const struct = await reviews.reviewInfo(1)
+      expect(struct.vote).to.equal(1)
+    })
+
+    it('should revert if review does not exist', async function () {
+      await expect(
+        reviews.connect(article1Author).vote(0, 34)
+      ).to.be.revertedWith('Reviews: cannot vote on inexistant review')
+    })
+
+    it('should decrement the vote count', async function () {
+      await reviews.connect(review1Author).vote(0, 1)
+      const struct = await reviews.reviewInfo(1)
+      expect(struct.vote).to.equal(0) // +1 -1
+    })
+
+    it('should revert if voter try to vote again', async function () {
+      await expect(
+        reviews.connect(article1Author).vote(0, 1)
+      ).to.be.revertedWith('Review: you already vote for this review')
+    })
+
+    it('should emit a Voted event', async function () {
+      expect(voteCall).to.emit(reviews, 'Voted').withArgs(1, 1, 1)
+      // emit Voted(choice, reviewID, userID);
     })
   })
 })

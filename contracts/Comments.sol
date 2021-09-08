@@ -57,15 +57,13 @@ contract Comments is ERC721Enumerable, IUsers {
     }
 
     constructor(
+        address usersContract,
         address articlesContract,
-        address reviewsContract,
-        address usersContract
+        address reviewsContract
     ) ERC721("Comment", "COM") {
+        _users = Users(usersContract);
         _articles = Articles(articlesContract);
         _reviews = Reviews(reviewsContract);
-        _users = Users(usersContract);
-
-        // baseURI override and public
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable) returns (bool) {
@@ -89,10 +87,13 @@ contract Comments is ERC721Enumerable, IUsers {
         c.contentCID = contentCID;
 
         if (target == address(_articles)) {
+            require(_articles.isArticle(targetID), "Comments: cannot comment an inexistant Article.");
             _articles.fillCommentsArray(targetID, commentID);
         } else if (target == address(_reviews)) {
+            require(_reviews.isReview(targetID), "Comments: cannot comment an inexistant Review.");
             _reviews.fillCommentsArray(targetID, commentID);
         } else {
+            require(_comment[targetID].author != address(0), "Comments: cannot comment an inexistant Comment.");
             _comment[targetID].comments.push(commentID);
         }
 
@@ -108,6 +109,7 @@ contract Comments is ERC721Enumerable, IUsers {
     }
 
     function vote(uint256 commentID) public returns (bool) {
+        require(_comment[commentID].author != address(0), "Comments: cannot vote on inexistant Comment.");
         uint256 userID = _users.profileID(msg.sender);
         require(_vote[userID][commentID] == false, "Comments: you already vote for this comment");
         _comment[commentID].vote += 1;

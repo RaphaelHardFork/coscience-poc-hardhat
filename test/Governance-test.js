@@ -48,24 +48,32 @@ describe('Governance', function () {
     articles = await Articles.connect(dev).deploy(users.address)
     await articles.deployed()
 
-    // get address of deployed contracts
     const Reviews = await ethers.getContractFactory('Reviews')
-    const reviewsAddress = await articles.reviewsAddress() // function Articles.sol
-    reviews = await Reviews.attach(reviewsAddress)
+    reviews = await Reviews.connect(dev).deploy(users.address, articles.address)
+    await reviews.deployed()
 
     const Comments = await ethers.getContractFactory('Comments')
-    const commentsAddress = await articles.commentsAddress()
-    comments = await Comments.attach(commentsAddress)
+    comments = await Comments.connect(dev).deploy(
+      users.address,
+      articles.address,
+      reviews.address
+    )
+    await comments.deployed()
 
-    await users.setContracts(
+    // Set contracts address
+    await articles.setContracts(reviews.address, comments.address)
+
+    const Governance = await ethers.getContractFactory(CONTRACT_NAME)
+    governance = await Governance.connect(dev).deploy(
+      users.address,
       articles.address,
       reviews.address,
       comments.address
     )
 
-    const Governance = await ethers.getContractFactory(CONTRACT_NAME)
-    const governanceAddress = await users.governanceAddress()
-    governance = await Governance.attach(governanceAddress)
+    // Set Contracts
+    await users.setContracts(governance.address)
+    // END OF DEPLOYMENT
 
     // Initiate the governance
     await users.connect(voter1).register(CID, CID)
@@ -311,6 +319,90 @@ describe('Governance', function () {
           .withArgs(1)
 
         const struct = await articles.articleInfo(1)
+        expect(struct.contentBanned, 'content banned').to.equal(true)
+      })
+    })
+
+    describe('vote to ban review', function () {
+      let banReview
+      beforeEach(async function () {
+        banReview = await governance.connect(voter2).voteToBanReview(1)
+        await governance.connect(voter3).voteToBanReview(1)
+        await governance.connect(voter4).voteToBanReview(1)
+        await governance.connect(voter5).voteToBanReview(1)
+      })
+
+      it('should revert if voter have already vote to ban the article', async function () {
+        await expect(
+          governance.connect(voter2).voteToBanReview(1)
+        ).to.be.revertedWith('Governance: you already vote to ban this review')
+      })
+
+      it('should increment the quorum counter', async function () {
+        expect(await governance.quorumItemBan(reviews.address, 1)).to.equal(4)
+      })
+
+      it('should emit a Voted event', async function () {
+        expect(banReview)
+          .to.emit(governance, 'Voted')
+          .withArgs(reviews.address, 1, 2)
+      })
+
+      it('should revert if a non approved try to vote', async function () {
+        await users.connect(newComer1).register(CID, CID)
+        await expect(
+          governance.connect(newComer1).voteToBanReview(1)
+        ).to.be.revertedWith('Users: you must be approved to use this feature')
+      })
+
+      it('should ban the content of the item', async function () {
+        await expect(governance.connect(voter6).voteToBanReview(1))
+          .to.emit(reviews, 'ReviewBanned')
+          .withArgs(1)
+
+        const struct = await reviews.reviewInfo(1)
+        expect(struct.contentBanned, 'content banned').to.equal(true)
+      })
+    })
+
+    describe('vote to ban comment', function () {
+      let banComment
+      beforeEach(async function () {
+        banComment = await governance.connect(voter2).voteToBanComment(1)
+        await governance.connect(voter3).voteToBanComment(1)
+        await governance.connect(voter4).voteToBanComment(1)
+        await governance.connect(voter5).voteToBanComment(1)
+      })
+
+      it('should revert if voter have already vote to ban the comment', async function () {
+        await expect(
+          governance.connect(voter2).voteToBanComment(1)
+        ).to.be.revertedWith('Governance: you already vote to ban this comment')
+      })
+
+      it('should increment the quorum counter', async function () {
+        expect(await governance.quorumItemBan(comments.address, 1)).to.equal(4)
+      })
+
+      it('should emit a Voted event', async function () {
+        expect(banComment)
+          .to.emit(governance, 'Voted')
+          .withArgs(comments.address, 1, 2)
+      })
+
+      it('should revert if a non approved try to vote', async function () {
+        await users.connect(newComer1).register(CID, CID)
+        await expect(
+          governance.connect(newComer1).voteToBanComment(1)
+        ).to.be.revertedWith('Users: you must be approved to use this feature')
+      })
+
+      it('should ban the content of the item', async function () {
+        await expect(governance.connect(voter6).voteToBanComment(1))
+          .to.emit(comments, 'CommentBanned')
+          .withArgs(1)
+
+        const struct = await comments.commentInfo(1)
         expect(struct.contentBanned, 'content banned').to.equal(true)
       })
     })

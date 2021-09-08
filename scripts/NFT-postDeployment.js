@@ -3,7 +3,7 @@ const { ethers } = require('hardhat')
 const hre = require('hardhat')
 const { readFile } = require('fs/promises')
 
-const DEPLOYED_CONTRACT_NAME = 'DeployedContract'
+const DEPLOYED_CONTRACT_NAME = 'Articles' // contract where we do administration
 
 const main = async () => {
   const CONTRACTS_DEPLOYED = JSON.parse(
@@ -12,15 +12,23 @@ const main = async () => {
   const DEPLOYED_CONTRACT_ADDRESS =
     CONTRACTS_DEPLOYED[DEPLOYED_CONTRACT_NAME][hre.network.name].address
 
+  const REVIEWS_CONTRACT = CONTRACTS_DEPLOYED.Reviews[hre.network.name].address
+  const COMMENTS_CONTRACT =
+    CONTRACTS_DEPLOYED.Comments[hre.network.name].address
+
   const [deployer] = await ethers.getSigners()
   const Contract = await hre.ethers.getContractFactory(DEPLOYED_CONTRACT_NAME)
   const contract = await Contract.attach(DEPLOYED_CONTRACT_ADDRESS)
 
   // post deployment script
   try {
-    const tx = await contract.connect(deployer).action()
+    const tx = await contract
+      .connect(deployer)
+      .setContracts(REVIEWS_CONTRACT, COMMENTS_CONTRACT)
     await tx.wait()
-    console.log(`Contracts interaction (action): ${deployer.address} did...`)
+    console.log(
+      `Contracts interaction: ${deployer.address} did setContracts on ${DEPLOYED_CONTRACT_NAME}`
+    )
   } catch (e) {
     console.log(e)
   }
