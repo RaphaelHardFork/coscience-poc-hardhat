@@ -64,6 +64,7 @@ contract Comments is ERC721Enumerable, IUsers {
         _articles = Articles(articlesContract);
         _reviews = Reviews(reviewsContract);
         _users = Users(usersContract);
+
         // baseURI override and public
     }
 

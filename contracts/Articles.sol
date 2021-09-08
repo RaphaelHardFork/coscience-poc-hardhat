@@ -33,8 +33,8 @@ contract Articles is ERC721Enumerable, IUsers {
     mapping(uint256 => mapping(uint256 => bool)) private _validityVote;
     mapping(uint256 => mapping(uint256 => bool)) private _importanceVote;
 
-    address private _reviews;
-    address private _comments;
+    Reviews private _reviews;
+    Comments private _comments;
 
     /**
      * @notice              Events
@@ -91,17 +91,9 @@ contract Articles is ERC721Enumerable, IUsers {
      * */
     constructor(address usersContract) ERC721("Article", "ART") {
         _users = Users(usersContract);
+        _reviews = new Reviews(address(this), address(_users));
+        _comments = new Comments(address(this), address(_reviews), address(_users));
     }
-
-    function setContracts(address reviews) public returns (bool) {
-        require(msg.sender == address(_users), "Articles: this function is not allowed");
-        _reviews = reviews;
-        // _comments = comments;
-        return true;
-    }
-
-    // external
-    // public
 
     function publish(
         address[] memory coAuthor,
@@ -129,13 +121,13 @@ contract Articles is ERC721Enumerable, IUsers {
     }
 
     function fillReviewsArray(uint256 articleID, uint256 reviewID) public returns (bool) {
-        require(msg.sender == _reviews, "Articles: this function is only callable by Reviews.sol");
+        require(msg.sender == address(_reviews), "Articles: this function is only callable by Reviews.sol");
         _article[articleID].reviews.push(reviewID);
         return true;
     }
 
     function fillCommentsArray(uint256 articleID, uint256 commentID) public returns (bool) {
-        require(msg.sender == _comments, "Articles: this function is only callable by Comments.sol");
+        require(msg.sender == address(_comments), "Articles: this function is only callable by Comments.sol");
         _article[articleID].comments.push(commentID);
         return true;
     }
@@ -167,6 +159,14 @@ contract Articles is ERC721Enumerable, IUsers {
         _importanceVote[userID][articleID] = true;
         emit ImportanceVoted(choice, articleID, userID);
         return true;
+    }
+
+    function reviewsAddress() public view returns (address) {
+        return address(_reviews);
+    }
+
+    function commentsAddress() public view returns (address) {
+        return address(_comments);
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable) returns (bool) {

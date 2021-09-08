@@ -16,6 +16,8 @@ contract Governance is IUsers {
     Reviews private _reviews;
     Comments private _comments;
 
+    uint8 public constant QUORUM = 5;
+
     // quorum for one item
     mapping(uint256 => uint8) private _acceptUserQuorum;
     mapping(uint256 => uint8) private _banUserQuorum;
@@ -52,7 +54,7 @@ contract Governance is IUsers {
         uint256 userID = _users.profileID(msg.sender);
         require(_acceptUserVote[userID][pendingUserID] == false, "Governance: you already vote to approve this user.");
 
-        if (_acceptUserQuorum[pendingUserID] < 5) {
+        if (_acceptUserQuorum[pendingUserID] < QUORUM) {
             _acceptUserQuorum[pendingUserID] += 1;
             _acceptUserVote[userID][pendingUserID] = true;
         } else {
@@ -67,7 +69,7 @@ contract Governance is IUsers {
         uint256 userID = _users.profileID(msg.sender);
         require(_banUserVote[userID][userIdToBan] == false, "Governance: you already vote to ban this user.");
 
-        if (_banUserQuorum[userIdToBan] < 5) {
+        if (_banUserQuorum[userIdToBan] < QUORUM) {
             _banUserQuorum[userIdToBan] += 1;
             _banUserVote[userID][userIdToBan] = true;
         } else {
@@ -83,7 +85,7 @@ contract Governance is IUsers {
             _recoverVote[userID][idToRecover][newAddress] == false,
             "Governance: you already vote to recover this account"
         );
-        if (_recoverQuorum[idToRecover][newAddress] < 5) {
+        if (_recoverQuorum[idToRecover][newAddress] < QUORUM) {
             _recoverQuorum[idToRecover][newAddress] += 1;
             _recoverVote[userID][idToRecover][newAddress] = true;
         } else {
@@ -99,7 +101,7 @@ contract Governance is IUsers {
             _itemVote[address(_articles)][userID][articleID] == false,
             "Governance: you already vote to ban this article"
         );
-        if (_itemQuorum[address(_articles)][articleID] < 5) {
+        if (_itemQuorum[address(_articles)][articleID] < QUORUM) {
             _itemQuorum[address(_articles)][articleID] += 1;
             _itemVote[address(_articles)][userID][articleID] = true;
         } else {
@@ -115,7 +117,7 @@ contract Governance is IUsers {
             _itemVote[address(_reviews)][userID][reviewID] == false,
             "Governance: you already vote to ban this review"
         );
-        if (_itemQuorum[address(_reviews)][reviewID] < 5) {
+        if (_itemQuorum[address(_reviews)][reviewID] < QUORUM) {
             _itemQuorum[address(_reviews)][reviewID] += 1;
             _itemVote[address(_reviews)][userID][reviewID] = true;
         } else {
@@ -132,7 +134,7 @@ contract Governance is IUsers {
             _itemVote[address(_comments)][userID][commentID] == false,
             "Governance: you already vote to ban this comment"
         );
-        if (_itemQuorum[address(_comments)][commentID] < 5) {
+        if (_itemQuorum[address(_comments)][commentID] < QUORUM) {
             _itemQuorum[address(_comments)][commentID] += 1;
             _itemVote[address(_comments)][userID][commentID] = true;
         } else {
@@ -140,5 +142,21 @@ contract Governance is IUsers {
         }
         emit Voted(address(_comments), commentID, userID);
         return true;
+    }
+
+    function quorumAccept(uint256 pendingUserID) public view returns (uint8) {
+        return _acceptUserQuorum[pendingUserID];
+    }
+
+    function quorumBan(uint256 userIdToBan) public view returns (uint8) {
+        return _banUserQuorum[userIdToBan];
+    }
+
+    function quorumRecover(uint256 userIdToRecover, address newAddress) public view returns (uint8) {
+        return _recoverQuorum[userIdToRecover][newAddress];
+    }
+
+    function quorumItemBan(address itemAddress, uint256 itemIdToBan) public view returns (uint8) {
+        return _itemQuorum[itemAddress][itemIdToBan];
     }
 }

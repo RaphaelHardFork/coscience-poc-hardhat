@@ -29,6 +29,7 @@ contract Users is Ownable, IUsers {
      * @dev {_userID} use Counters to create unique ids
      * */
     Counters.Counter private _userID;
+    Counters.Counter private _acceptedUser;
 
     /// @dev    A mapping to find user's Struct with the {id}
     mapping(uint256 => User) private _user;
@@ -37,9 +38,9 @@ contract Users is Ownable, IUsers {
     mapping(address => uint256) private _userIdPointer;
 
     // governance address
-    Articles private _articles;
-    Reviews private _reviews;
-    Comments private _comments;
+    address private _articles; // default address(0)?
+    address private _reviews;
+    address private _comments;
     Governance private _governance;
 
     /**
@@ -112,11 +113,21 @@ contract Users is Ownable, IUsers {
      * */
     constructor(address owner_) Ownable() {
         transferOwnership(owner_);
-        _articles = new Articles(address(this));
-        _reviews = new Reviews(address(_articles), address(this));
-        _comments = new Comments(address(_articles), address(_reviews), address(this));
-        _articles.setContracts(address(_reviews));
-        _governance = new Governance(address(this), address(_articles), address(_reviews), address(_comments));
+    }
+
+    function setContracts(
+        address articles_,
+        address reviews_,
+        address comments_
+    ) public returns (bool) {
+        require(_articles == address(0), "Users: this function is callable only one time");
+        _articles = articles_;
+        _reviews = reviews_;
+        _comments = comments_;
+
+        _governance = new Governance(address(this), articles_, reviews_, comments_);
+
+        return true;
     }
 
     /**
@@ -172,13 +183,14 @@ contract Users is Ownable, IUsers {
      * @param userID_   user ID is specify to get access to the corresponding Struct User
      */
     function acceptUser(uint256 userID_) public onlyOwner returns (bool) {
-        if (nbOfUsers() == 5) {
+        if (nbOfAcceptedUsers() == 4) {
             transferOwnership(address(_governance));
-        } else {
-            require(_user[userID_].status == WhiteList.Pending, "Users: user is not registered or already approved");
-            _user[userID_].status = WhiteList.Approved;
-            emit Approved(userID_);
         }
+        require(_user[userID_].status == WhiteList.Pending, "Users: user is not registered or already approved");
+        _user[userID_].status = WhiteList.Approved;
+        _acceptedUser.increment();
+        emit Approved(userID_);
+
         return true;
     }
 
@@ -254,6 +266,10 @@ contract Users is Ownable, IUsers {
         return _userID.current();
     }
 
+    function nbOfAcceptedUsers() public view returns (uint256) {
+        return _acceptedUser.current();
+    }
+
     /**
      *  @dev    Return true if an user has the Approved status
      *
@@ -264,18 +280,6 @@ contract Users is Ownable, IUsers {
     function isUser(address account) public view returns (bool) {
         uint256 userID = _userIdPointer[account];
         return _user[userID].status == WhiteList.Approved;
-    }
-
-    function articleAddress() public view returns (address) {
-        return address(_articles);
-    }
-
-    function reviewAddress() public view returns (address) {
-        return address(_reviews);
-    }
-
-    function commentAddress() public view returns (address) {
-        return address(_comments);
     }
 
     function governanceAddress() public view returns (address) {

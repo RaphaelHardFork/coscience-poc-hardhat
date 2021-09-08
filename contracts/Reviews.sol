@@ -91,7 +91,7 @@ contract Reviews is ERC721Enumerable, IUsers {
     }
 
     function fillCommentsArray(uint256 reviewID, uint256 commentID) public returns (bool) {
-        require(msg.sender == _users.commentAddress(), "Reviews: this function is only callable by Comments.sol");
+        require(msg.sender == _articles.commentsAddress(), "Reviews: this function is only callable by Comments.sol");
         _review[reviewID].comments.push(commentID);
         return true;
     }

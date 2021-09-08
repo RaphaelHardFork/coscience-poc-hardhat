@@ -27,10 +27,6 @@ describe('Users', function () {
     Users = await ethers.getContractFactory(CONTRACT_NAME)
     users = await Users.connect(dev).deploy(owner.address)
     await users.deployed()
-
-    const Governance = await ethers.getContractFactory('Governance')
-    const governanceAddress = await users.governanceAddress()
-    governance = await Governance.attach(governanceAddress)
   })
 
   describe('Deployment', function () {
@@ -74,11 +70,36 @@ describe('Users', function () {
   })
 
   describe('acceptUser', function () {
-    let acceptUserCall
+    let acceptUserCall, articles, reviews, comments, governance
     beforeEach(async function () {
       await users.connect(wallet1).register(CID, CID)
       acceptUserCall = await users.connect(owner).acceptUser(1)
       await users.connect(wallet2).register(CID, CID)
+
+      // Deployment of contracts
+      const Articles = await ethers.getContractFactory('Articles')
+      articles = await Articles.connect(dev).deploy(users.address)
+      await articles.deployed()
+
+      // get address of deployed contracts
+      const Reviews = await ethers.getContractFactory('Reviews')
+      const reviewsAddress = await articles.reviewsAddress() // function Articles.sol
+      reviews = await Reviews.attach(reviewsAddress)
+
+      const Comments = await ethers.getContractFactory('Comments')
+      const commentsAddress = await articles.commentsAddress()
+      comments = await Comments.attach(commentsAddress)
+
+      // Deployment of governance
+      await users.setContracts(
+        articles.address,
+        reviews.address,
+        comments.address
+      )
+
+      const Governance = await ethers.getContractFactory('Governance')
+      const governanceAddress = await users.governanceAddress()
+      governance = await Governance.attach(governanceAddress)
     })
 
     it('should change the status', async function () {
@@ -104,18 +125,19 @@ describe('Users', function () {
     })
 
     it('should transfer ownership on the 5th user', async function () {
-      await users.connect(owner).acceptUser(2)
       await users.connect(wallet3).register(CID, CID)
       await users.connect(wallet4).register(CID, CID)
       await users.connect(wallet5).register(CID, CID)
+      await users.connect(wallet6).register(CID, CID)
+      await users.connect(owner).acceptUser(2)
       await users.connect(owner).acceptUser(3)
       await users.connect(owner).acceptUser(4)
+
       await users.connect(owner).acceptUser(5)
+
       const struct = await users.userInfo(5)
-      expect(struct.status, 'not change status').to.equal(1) // 1 = Pending
-      expect(await users.governanceAddress(), 'address').to.equal(
-        governance.address
-      )
+      expect(struct.status, 'change status').to.equal(2) // 1 = Pending
+      expect(await users.owner(), 'address').to.equal(governance.address)
     })
   })
 
