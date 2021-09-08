@@ -152,9 +152,9 @@ contract Articles is ERC721Enumerable, IUsers {
             "Articles: you already vote on importance for this article."
         );
         if (choice == Vote.Yes) {
-            _article[articleID].validity += 1;
+            _article[articleID].importance += 1;
         } else {
-            _article[articleID].validity -= 1;
+            _article[articleID].importance -= 1;
         }
         _importanceVote[userID][articleID] = true;
         emit ImportanceVoted(choice, articleID, userID);

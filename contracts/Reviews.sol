@@ -64,6 +64,7 @@ contract Reviews is ERC721Enumerable, IUsers {
 
     // post a review
     function post(string memory contentCID, uint256 targetID) public onlyUser returns (uint256) {
+        // isArticle?
         _reviewID.increment();
         uint256 reviewID = _reviewID.current();
         _safeMint(msg.sender, reviewID);

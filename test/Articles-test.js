@@ -166,4 +166,77 @@ describe('Articles', function () {
       )
     })
   })
+
+  describe('voteValidity', function () {
+    beforeEach(async function () {
+      await users.connect(article1Author).register(CID, CID)
+      await users.connect(owner).acceptUser(1)
+      const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+      await users.connect(wallet1).register(CID, CID)
+      await users.connect(owner).acceptUser(2)
+    })
+
+    it('should update the struct Article validity', async function () {
+      const struct = await articles.articleInfo(1)
+      console.log(struct.validity)
+      expect(struct.validity, 'validity').to.equal(0)
+      await articles.connect(wallet1).voteValidity(1, 1)
+      console.log(struct.validity)
+      // expect(struct.validity, 'validity').to.equal(1)
+    })
+
+    it('should revert if user already voted', async function () {
+      await articles.connect(wallet1).voteValidity(1, 1)
+      await expect(
+        articles.connect(wallet1).voteValidity(1, 1)
+      ).to.be.revertedWith(
+        'Articles: you already vote on validity for this article.'
+      )
+    })
+
+    it('should revert if user is not approved', async function () {
+      await expect(
+        articles.connect(wallet2).voteValidity(1, 1)
+      ).to.be.revertedWith('Users: you must be approved to use this feature.')
+    })
+
+    it('should emit ValidityVoted', async function () {
+      await expect(articles.connect(wallet1).voteValidity(1, 1))
+        .to.emit(articles, 'ValidityVoted')
+        .withArgs(1, 1, 2)
+    })
+  })
+
+  describe('voteImportance', function () {
+    beforeEach(async function () {
+      await users.connect(article1Author).register(CID, CID)
+      await users.connect(owner).acceptUser(1)
+      const coAuthor = [wallet1.address, wallet2.address, wallet3.address]
+      await articles.connect(article1Author).publish(coAuthor, CID, CID)
+      await users.connect(wallet1).register(CID, CID)
+      await users.connect(owner).acceptUser(2)
+    })
+
+    it('should revert if user already voted', async function () {
+      await articles.connect(wallet1).voteImportance(1, 1)
+      await expect(
+        articles.connect(wallet1).voteImportance(1, 1)
+      ).to.be.revertedWith(
+        'Articles: you already vote on importance for this article.'
+      )
+    })
+
+    it('should revert if user is not approved', async function () {
+      await expect(
+        articles.connect(wallet2).voteImportance(1, 1)
+      ).to.be.revertedWith('Users: you must be approved to use this feature.')
+    })
+
+    it('should emit ImportanceVoted', async function () {
+      await expect(articles.connect(wallet1).voteImportance(1, 1))
+        .to.emit(articles, 'ImportanceVoted')
+        .withArgs(1, 1, 2)
+    })
+  })
 })

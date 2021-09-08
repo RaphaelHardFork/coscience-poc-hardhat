@@ -16,7 +16,7 @@ contract Governance is IUsers {
     Reviews private _reviews;
     Comments private _comments;
 
-    uint8 public constant QUORUM = 5;
+    uint8 public constant QUORUM = 4;
 
     // quorum for one item
     mapping(uint256 => uint8) private _acceptUserQuorum;
@@ -37,6 +37,11 @@ contract Governance is IUsers {
     event UserVoted(uint8 indexed voteType, uint256 indexed subjectUserID, uint256 indexed userID);
     event RecoverVoted(uint256 indexed idToRecover, address indexed newAddress, uint256 indexed userID);
 
+    modifier onlyUser() {
+        require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
+        _;
+    }
+
     constructor(
         address users,
         address articles,
@@ -49,7 +54,7 @@ contract Governance is IUsers {
         _comments = Comments(comments);
     }
 
-    function voteToAcceptUser(uint256 pendingUserID) public returns (bool) {
+    function voteToAcceptUser(uint256 pendingUserID) public onlyUser returns (bool) {
         require(_users.userStatus(pendingUserID) == WhiteList.Pending, "Governance: user have not the pending status");
         uint256 userID = _users.profileID(msg.sender);
         require(_acceptUserVote[userID][pendingUserID] == false, "Governance: you already vote to approve this user.");
@@ -64,8 +69,8 @@ contract Governance is IUsers {
         return true;
     }
 
-    function voteToBanUser(uint256 userIdToBan) public returns (bool) {
-        require(_users.userStatus(userIdToBan) == WhiteList.NotApproved, "Governance: user must be approved to vote");
+    function voteToBanUser(uint256 userIdToBan) public onlyUser returns (bool) {
+        require(_users.userStatus(userIdToBan) == WhiteList.Approved, "Governance: user must be approved to vote");
         uint256 userID = _users.profileID(msg.sender);
         require(_banUserVote[userID][userIdToBan] == false, "Governance: you already vote to ban this user.");
 
@@ -79,7 +84,7 @@ contract Governance is IUsers {
         return true;
     }
 
-    function voteForRecover(uint256 idToRecover, address newAddress) public returns (bool) {
+    function voteToRecover(uint256 idToRecover, address newAddress) public onlyUser returns (bool) {
         uint256 userID = _users.profileID(msg.sender);
         require(
             _recoverVote[userID][idToRecover][newAddress] == false,
@@ -95,7 +100,7 @@ contract Governance is IUsers {
         return true;
     }
 
-    function voteToBanArticle(uint256 articleID) public returns (bool) {
+    function voteToBanArticle(uint256 articleID) public onlyUser returns (bool) {
         uint256 userID = _users.profileID(msg.sender);
         require(
             _itemVote[address(_articles)][userID][articleID] == false,
@@ -111,7 +116,7 @@ contract Governance is IUsers {
         return true;
     }
 
-    function voteToBanReview(uint256 reviewID) public returns (bool) {
+    function voteToBanReview(uint256 reviewID) public onlyUser returns (bool) {
         uint256 userID = _users.profileID(msg.sender);
         require(
             _itemVote[address(_reviews)][userID][reviewID] == false,
@@ -128,7 +133,7 @@ contract Governance is IUsers {
         return true;
     }
 
-    function voteToBanComment(uint256 commentID) public returns (bool) {
+    function voteToBanComment(uint256 commentID) public onlyUser returns (bool) {
         uint256 userID = _users.profileID(msg.sender);
         require(
             _itemVote[address(_comments)][userID][commentID] == false,
