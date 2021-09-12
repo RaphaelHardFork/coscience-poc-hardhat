@@ -108,7 +108,7 @@ contract Comments is ERC721Enumerable, IUsers {
         return true;
     }
 
-    function vote(uint256 commentID) public returns (bool) {
+    function vote(uint256 commentID) public onlyUser returns (bool) {
         require(_comment[commentID].author != address(0), "Comments: cannot vote on inexistant Comment.");
         uint256 userID = _users.profileID(msg.sender);
         require(_vote[userID][commentID] == false, "Comments: you already vote for this comment");
