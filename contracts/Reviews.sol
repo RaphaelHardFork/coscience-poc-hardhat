@@ -29,6 +29,14 @@ contract Reviews is ERC721Enumerable, IUsers {
 
     mapping(uint256 => mapping(uint256 => bool)) private _vote;
 
+    /**
+     * @notice              Events
+     * @dev                 Emitted when an user post Reviews
+     * @param poster        address of the poster
+     * @param reviewID      reviews's token ID
+     * @param targetID      targetID from the struct
+     * */
+
     event Posted(address indexed poster, uint256 indexed reviewID, uint256 targetID);
     event ReviewBanned(uint256 indexed _reviewID);
     event Voted(Vote indexed choice, uint256 indexed reviewID, uint256 indexed userID);

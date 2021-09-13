@@ -26,15 +26,17 @@ contract Articles is ERC721Enumerable, IUsers {
 
     //storage
     Counters.Counter private _articleID;
+
     Users private _users;
-    mapping(uint256 => Article) private _article;
-
-    // has vote? userID => articleID =>
-    mapping(uint256 => mapping(uint256 => bool)) private _validityVote;
-    mapping(uint256 => mapping(uint256 => bool)) private _importanceVote;
-
     address private _reviews;
     address private _comments;
+
+    // Mapping from article ID to the Article
+    mapping(uint256 => Article) private _article;
+
+    // Mapping from article ID to enum vote 
+    mapping(uint256 => mapping(uint256 => bool)) private _validityVote;
+    mapping(uint256 => mapping(uint256 => bool)) private _importanceVote;
 
     /**
      * @notice              Events
@@ -44,10 +46,24 @@ contract Articles is ERC721Enumerable, IUsers {
      * @param abstractCID   ipfs CID of the abstract
      * */
     event Published(address indexed author, uint256 indexed articleID, string abstractCID);
-
+     /**
+     * @dev                 Emitted when an user vote about the validity of an article
+     * @param choice        vote choice of the user
+     * @param articleID     voted article ID
+     * @param userID        user ID of the voter
+     * */
     event ValidityVoted(Vote indexed choice, uint256 indexed articleID, uint256 indexed userID);
+    /**
+     * @dev                 Emitted when an user vote about the importance of an article
+     * @param choice        vote choice of the user
+     * @param articleID     voted article ID
+     * @param userID        user ID of the voter
+     * */
     event ImportanceVoted(Vote indexed choice, uint256 indexed articleID, uint256 indexed userID);
-
+    /**
+     * @dev                 Emitted when an article is banned
+     * @param articleID     banned article ID
+     * */
     event ArticleBanned(uint256 indexed articleID);
 
     modifier onlyUser() {
