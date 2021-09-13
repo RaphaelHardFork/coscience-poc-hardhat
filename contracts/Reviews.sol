@@ -95,7 +95,7 @@ contract Reviews is ERC721Enumerable, IUsers {
         return true;
     }
 
-    function vote(Vote choice, uint256 reviewID) public returns (bool) {
+    function vote(Vote choice, uint256 reviewID) public onlyUser returns (bool) {
         require(isReview(reviewID), "Reviews: cannot vote on inexistant review");
         uint256 userID = _users.profileID(msg.sender);
         require(_vote[userID][reviewID] == false, "Review: you already vote for this review.");
