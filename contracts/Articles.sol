@@ -31,13 +31,7 @@ contract Articles is ERC721Enumerable, IUsers {
     address private _reviews;
     address private _comments;
 
-    // Mapping from article ID to the Article
-    mapping(uint256 => Article) private _article;
-
-    // Mapping from article ID to enum vote 
-    mapping(uint256 => mapping(uint256 => bool)) private _validityVote;
-    mapping(uint256 => mapping(uint256 => bool)) private _importanceVote;
-
+    
     /**
      * @notice              Events
      * @dev                 Emitted when an user publish an article
@@ -66,11 +60,13 @@ contract Articles is ERC721Enumerable, IUsers {
      * */
     event ArticleBanned(uint256 indexed articleID);
 
+    ///the approved user calls this function, the function is executed and otherwise, an exception is thrown.
     modifier onlyUser() {
         require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
         _;
     }
 
+    ///the owner calls this function, the function is executed and otherwise, an exception is thrown.
     modifier onlyOwner() {
         require(_users.owner() == msg.sender, "Users: caller is not the owner");
         _;
@@ -100,6 +96,13 @@ contract Articles is ERC721Enumerable, IUsers {
         uint256[] reviews;
     }
 
+    // Mapping from article ID to the Article
+    mapping(uint256 => Article) private _article;
+
+    // Mapping from article ID to enum vote 
+    mapping(uint256 => mapping(uint256 => bool)) private _validityVote;
+    mapping(uint256 => mapping(uint256 => bool)) private _importanceVote;
+
     /**
      * @notice              Constructor
      * @dev                 The parameter {owner_} is set in case the deployer is different from the owner (see Users.sol)
@@ -109,6 +112,11 @@ contract Articles is ERC721Enumerable, IUsers {
         _users = Users(usersContract);
     }
 
+    /**
+     * @dev ?
+     * @param reviews_ address of Reviews.sol
+     * @param comments_ address of Comments.sol
+     */
     function setContracts(address reviews_, address comments_) public returns (bool) {
         require(_reviews == address(0), "Articles: this function is callable only one time");
         _reviews = reviews_;
@@ -116,6 +124,16 @@ contract Articles is ERC721Enumerable, IUsers {
         return true;
     }
 
+    /**
+     * @notice  Public functions
+     * @dev     This function allow a user to publish an article
+     *
+     *          Emit a {Published} event
+     *
+     * @param coAuthor          an address array that contains authors
+     * @param abstractCID       the CID hash allowing to get the abstract's informations
+     * @param contentCID         the CID hash allowing to get the content's informations
+     */
     function publish(
         address[] memory coAuthor,
         string memory abstractCID,
@@ -135,6 +153,12 @@ contract Articles is ERC721Enumerable, IUsers {
         return articleID;
     }
 
+    /**
+     * @dev     This function allow owner to ban an article
+     *
+     *          Emit a {} event
+     * @param articleID_  the article ID to ban
+     */
     function banArticle(uint256 articleID) public onlyOwner returns (bool) {
         _article[articleID].contentBanned = true;
         emit ArticleBanned(articleID);
