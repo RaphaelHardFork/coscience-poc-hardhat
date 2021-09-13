@@ -10,12 +10,12 @@ import "./Articles.sol";
 
 /**
  * @title Reviews
- * @notice TODO
- * @dev test setBaseUri (if useful)
- *  https://pinata.gateway
- * CID = Qmdhcjdbsdjss
- * Base+tokenURI
- * changeBaseURI: in case gateways out of function
+ * @author  Sarah, Henry & Raphael
+ * @notice You can use this contract to mint Reviews in NFT format.
+ * @dev Important features:
+ *              - NFT are not transferable
+ *              - Metadata are stored on IPFS
+ *              - BaseURI (gateway) + TokenURI (CID)
  * */
 
 contract Reviews is ERC721Enumerable, IUsers {

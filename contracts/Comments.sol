@@ -9,13 +9,12 @@ import "./Reviews.sol";
 
 /**
  * @title Comments
- * @notice
- * @dev
- * TODO test setBaseUri (if useful)
- * https://pinata.gateway
- * CID = Qmdhcjdbsdjss
- * Base+tokenURI
- * changeBaseURI: in case gateways out of function
+ * @author  Sarah, Henry & Raphael
+ * @notice You can use this contract to mint Comments in NFT format.
+ * @dev Important features:
+ *              - NFT are not transferable
+ *              - Metadata are stored on IPFS
+ *              - BaseURI (gateway) + TokenURI (CID)
  * */
 
 contract Comments is ERC721Enumerable, IUsers {

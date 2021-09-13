@@ -10,6 +10,13 @@ import "./Articles.sol";
 import "./Reviews.sol";
 import "./Comments.sol";
 
+/**
+ * @title Governace
+ * @author  Sarah, Henry & Raphael
+ * @notice This contract is set to give a decentralise governance to approved users instead of initial owner. 
+ * @dev ?
+ * */
+
 contract Governance is IUsers {
     Users private _users;
     Articles private _articles;
