@@ -242,18 +242,34 @@ contract Users is Ownable, IUsers {
         return _userIdPointer[account];
     }
 
+    /**
+     * @dev Return the user info from the struct
+     * @param userID   user ID is specify to get access to the corresponding Struct User
+     */
     function userInfo(uint256 userID) public view returns (User memory) {
         return _user[userID];
     }
 
+    /**
+     * @dev Return the user status
+     * @param userID   user ID is specify to get access to the corresponding Whitelist status
+     */
     function userStatus(uint256 userID) public view returns (WhiteList) {
         return _user[userID].status;
     }
 
+    /**
+     * @dev get the number of users
+     * @return   return the total of users via their ID in this contract
+     */
     function nbOfUsers() public view returns (uint256) {
         return _userID.current();
     }
 
+    /**
+     * @dev get the number of accepted users
+     * @return   return the total of accepted users via their ID in this contract
+     */
     function nbOfAcceptedUsers() public view returns (uint256) {
         return _acceptedUser.current();
     }
