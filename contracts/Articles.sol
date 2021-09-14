@@ -113,7 +113,7 @@ contract Articles is ERC721Enumerable, IUsers {
     }
 
     /**
-     * @dev ?
+     * @dev ???????????????????????????
      * @param reviews_ address of Reviews.sol
      * @param comments_ address of Comments.sol
      */
@@ -156,8 +156,8 @@ contract Articles is ERC721Enumerable, IUsers {
     /**
      * @dev     This function allow owner to ban an article
      *
-     *          Emit a {} event
-     * @param articleID_  the article ID to ban
+     *          Emit a {ArticleBanned} event
+     * @param articleID  the article ID to ban
      */
     function banArticle(uint256 articleID) public onlyOwner returns (bool) {
         _article[articleID].contentBanned = true;
@@ -165,18 +165,36 @@ contract Articles is ERC721Enumerable, IUsers {
         return true;
     }
 
+    /**
+     * @dev fill the struct's reviews array of the article that reviews come from
+     * @param articleID the article ID where the reviews from
+     * @param reviewID the reviews ID to push
+     */
     function fillReviewsArray(uint256 articleID, uint256 reviewID) public returns (bool) {
         require(msg.sender == _reviews, "Articles: this function is only callable by Reviews.sol");
         _article[articleID].reviews.push(reviewID);
         return true;
     }
-
+  
+    /**
+     * @dev fill the struct's comments array of the article that comment come from
+     * @param articleID the article ID where the reviews from
+     * @param commentID the comment ID to push
+     */
     function fillCommentsArray(uint256 articleID, uint256 commentID) public returns (bool) {
         require(msg.sender == address(_comments), "Articles: this function is only callable by Comments.sol");
         _article[articleID].comments.push(commentID);
         return true;
     }
 
+    /**
+     * @dev     This function allow a user to vote the validity of an article
+     *
+     *          Emit a {ValidityVoted} event
+     *
+     * @param choice          vote choice of the user
+     * @param articleID       the article id voted
+     */
     function voteValidity(Vote choice, uint256 articleID) public onlyUser returns (bool) {
         require(isArticle(articleID), "Articles: cannot vote on inexistant Article.");
         uint256 userID = _users.profileID(msg.sender);
@@ -191,6 +209,14 @@ contract Articles is ERC721Enumerable, IUsers {
         return true;
     }
 
+    /**
+     * @dev     This function allow a user to vote the importance of an article
+     *
+     *          Emit a {ImportanceVoted} event
+     *
+     * @param choice          vote choice of the user
+     * @param articleID       the article id voted
+     */
     function voteImportance(Vote choice, uint256 articleID) public onlyUser returns (bool) {
         require(isArticle(articleID), "Articles: cannot vote on inexistant Article.");
         uint256 userID = _users.profileID(msg.sender);
@@ -208,18 +234,34 @@ contract Articles is ERC721Enumerable, IUsers {
         return true;
     }
 
+    /**
+     * @dev    get ????????????????
+     * @return the comment address
+     */
     function commentsAddress() public view returns (address) {
         return _comments;
     }
 
+    /**
+     * @dev     This function ??????????????????????
+     * @param interfaceId  ???????????????????
+     */
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @dev     get the article info from the struct
+     * @param articleID       the article id
+     */
     function articleInfo(uint256 articleID) public view returns (Article memory) {
         return _article[articleID];
     }
 
+    /**
+     * @dev     this fonction returns if the article ????????????????????????
+     * @param articleID       the article id
+     */
     function isArticle(uint256 articleID) public view returns (bool) {
         if (_article[articleID].author == address(0)) {
             return false;
@@ -228,7 +270,12 @@ contract Articles is ERC721Enumerable, IUsers {
         }
     }
 
-    // internal
+    /**
+     * @dev  ??????????????????????????????
+     * @param from  ???????????
+     * @param to ???????
+     * @param tokenId  ?????????
+     */    
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -238,9 +285,12 @@ contract Articles is ERC721Enumerable, IUsers {
         require(from == address(0) || to == address(0), "Articles: articles tokens are not transferable."); // IMPORTANT TEST
     }
 
+    /**
+     * @dev  ??????????????????????????????
+     * @param tokenId  ???????????
+     */    
     function _burn(uint256 tokenId) internal virtual override(ERC721) {
         super._burn(tokenId);
     }
 
-    // private
 }
