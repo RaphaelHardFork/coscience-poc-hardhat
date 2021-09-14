@@ -25,6 +25,26 @@ contract Governance is IUsers {
 
     uint8 public constant QUORUM = 4;
 
+
+
+    event Voted(address indexed contractAddress, uint256 indexed itemID, uint256 indexed userID);
+    event UserVoted(uint8 indexed voteType, uint256 indexed subjectUserID, uint256 indexed userID);
+    event RecoverVoted(uint256 indexed idToRecover, address indexed newAddress, uint256 indexed userID);
+
+    /**
+     * @notice  Modifiers
+     * @dev     This modifier prevent a Pending or Not approved user to call a function
+     *          it uses the state of Users.sol
+     * */
+    modifier onlyUser() {
+        require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
+        _;
+    }
+    /// @dev    This modifier prevent an user to call a funcion reserved to the owner
+    modifier beforeGovernance() {
+        require(_users.owner() == address(this), "Governance: governance is not set");
+        _;
+    }
     // quorum for one item
     mapping(uint256 => uint8) private _acceptUserQuorum;
     mapping(uint256 => uint8) private _banUserQuorum;
@@ -40,19 +60,6 @@ contract Governance is IUsers {
 
     mapping(address => mapping(uint256 => mapping(uint256 => bool))) private _itemVote;
 
-    event Voted(address indexed contractAddress, uint256 indexed itemID, uint256 indexed userID);
-    event UserVoted(uint8 indexed voteType, uint256 indexed subjectUserID, uint256 indexed userID);
-    event RecoverVoted(uint256 indexed idToRecover, address indexed newAddress, uint256 indexed userID);
-
-    modifier onlyUser() {
-        require(_users.isUser(msg.sender) == true, "Users: you must be approved to use this feature.");
-        _;
-    }
-
-    modifier beforeGovernance() {
-        require(_users.owner() == address(this), "Governance: governance is not set");
-        _;
-    }
 
     constructor(
         address users,
@@ -66,6 +73,12 @@ contract Governance is IUsers {
         _comments = Comments(comments);
     }
 
+    /**
+     * @dev     This function allow user to accept an pending user when owner switch to governance
+     *
+     *          Emit a {UserVoted} event
+     * @param pendingUserID  the pending user ID
+     */
     function voteToAcceptUser(uint256 pendingUserID) public onlyUser beforeGovernance returns (bool) {
         require(_users.userStatus(pendingUserID) == WhiteList.Pending, "Governance: user have not the pending status");
         uint256 userID = _users.profileID(msg.sender);
@@ -81,6 +94,12 @@ contract Governance is IUsers {
         return true;
     }
 
+    /**
+     * @dev     This function allow user to ban an other user when owner switch to governance
+     *
+     *          Emit a {UserVoted} event
+     * @param userIdToBan  the user ID to ban
+     */
     function voteToBanUser(uint256 userIdToBan) public onlyUser beforeGovernance returns (bool) {
         require(_users.userStatus(userIdToBan) == WhiteList.Approved, "Governance: user must be approved to vote");
         uint256 userID = _users.profileID(msg.sender);
@@ -96,6 +115,13 @@ contract Governance is IUsers {
         return true;
     }
 
+    /**
+     * @dev     This function allow user to permit an other user to recover an account
+     *
+     *          Emit a {RecoverVoted} event
+     * @param idToRecover  the account ID to recover
+     * @param newAddress   the new address
+     */
     function voteToRecover(uint256 idToRecover, address newAddress) public onlyUser beforeGovernance returns (bool) {
         uint256 userID = _users.profileID(msg.sender);
         require(
@@ -112,6 +138,12 @@ contract Governance is IUsers {
         return true;
     }
 
+    /**
+     * @dev     This function allow user to ban an article
+     *
+     *          Emit a {Voted} event
+     * @param articleID  the comment ID to ban
+     */
     function voteToBanArticle(uint256 articleID) public onlyUser beforeGovernance returns (bool) {
         uint256 userID = _users.profileID(msg.sender);
         require(
@@ -128,6 +160,12 @@ contract Governance is IUsers {
         return true;
     }
 
+    /**
+     * @dev     This function allow user to ban a reviews
+     *
+     *          Emit a {Voted} event
+     * @param reviewID  the reviews ID to ban
+     */
     function voteToBanReview(uint256 reviewID) public onlyUser beforeGovernance returns (bool) {
         uint256 userID = _users.profileID(msg.sender);
         require(
@@ -145,6 +183,12 @@ contract Governance is IUsers {
         return true;
     }
 
+     /**
+     * @dev     This function allow user to ban a comment
+     *
+     *          Emit a {Voted} event
+     * @param commentID  the comment ID to ban
+     */
     function voteToBanComment(uint256 commentID) public onlyUser beforeGovernance returns (bool) {
         uint256 userID = _users.profileID(msg.sender);
         require(
