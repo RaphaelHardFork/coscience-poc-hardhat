@@ -14,7 +14,11 @@ import "./Comments.sol";
  * @title Governace
  * @author  Sarah, Henry & Raphael
  * @notice This contract is set to give a decentralise governance to approved users instead of initial owner. 
- * @dev ?
+ * @dev Important features:
+ *              - Recovery user account with vote from approved users
+ *              - Users have to be validated by firts time a centralized agent (owner) or after 5 approved users by a governance vote.
+ *              - The centralized agent become a governance contract after 5 approved users
+ *              - Informations of the user are stored on IPFS
  * */
 
 contract Governance is IUsers {
@@ -26,8 +30,20 @@ contract Governance is IUsers {
     uint8 public constant QUORUM = 4;
 
 
-
+    /**
+     * @dev                         Emitted when an user vote
+     * @param contractAddress       address of the contract (Article.sol,Reviews.sol or Comments.sol)
+     * @param itemID                ID of the item
+     * @param userID                user ID of the voter
+     * */
     event Voted(address indexed contractAddress, uint256 indexed itemID, uint256 indexed userID);
+
+    /**
+     * @dev                         Emitted when an user vote for accept or ban an other user
+     * @param voteType              the type of vote (argument of the function)
+     * @param subjectUserID         ID of the user who is voted
+     * @param userID                user ID of the voter
+     * */
     event UserVoted(uint8 indexed voteType, uint256 indexed subjectUserID, uint256 indexed userID);
     event RecoverVoted(uint256 indexed idToRecover, address indexed newAddress, uint256 indexed userID);
 
