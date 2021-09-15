@@ -61,7 +61,9 @@ describe('Governance', function () {
     await comments.deployed()
 
     // Set contracts address
-    await articles.setContracts(reviews.address, comments.address)
+    await articles
+      .connect(owner)
+      .setContracts(reviews.address, comments.address)
 
     const Governance = await ethers.getContractFactory(CONTRACT_NAME)
     governance = await Governance.connect(dev).deploy(
@@ -72,7 +74,7 @@ describe('Governance', function () {
     )
 
     // Set Contracts
-    await users.setContracts(governance.address)
+    await users.connect(owner).setContracts(governance.address)
     // END OF DEPLOYMENT
 
     // Initiate the governance
@@ -85,18 +87,48 @@ describe('Governance', function () {
     await users.connect(owner).acceptUser(2)
     await users.connect(owner).acceptUser(3)
     await users.connect(owner).acceptUser(4)
-    await users.connect(owner).acceptUser(5) // transfer ownership
   })
 
   describe('Deployment', function () {
     it('should transfer ownership to governance', async function () {
+      expect(await users.owner()).to.equal(owner.address)
+      await users.connect(owner).acceptUser(5)
       expect(await users.owner()).to.equal(governance.address)
+    })
+  })
+
+  describe('beforeGovernance', function () {
+    it('should revert if governance is not set', async function () {
+      await expect(
+        governance.connect(voter1).voteToAcceptUser(3)
+      ).to.be.revertedWith('Governance: governance is not set')
+
+      await expect(
+        governance.connect(voter1).voteToBanUser(2)
+      ).to.be.revertedWith('Governance: governance is not set')
+
+      await expect(
+        governance.connect(voter1).voteToRecover(2, voter4.address)
+      ).to.be.revertedWith('Governance: governance is not set')
+
+      await expect(
+        governance.connect(voter1).voteToBanArticle(1)
+      ).to.be.revertedWith('Governance: governance is not set')
+
+      await expect(
+        governance.connect(voter1).voteToBanReview(1)
+      ).to.be.revertedWith('Governance: governance is not set')
+
+      await expect(
+        governance.connect(voter1).voteToAcceptUser(1)
+      ).to.be.revertedWith('Governance: governance is not set')
     })
   })
 
   describe('vote to accept user', function () {
     let acceptUserCall
     beforeEach(async function () {
+      await users.connect(owner).acceptUser(5) // transfer ownership
       await users.connect(newComer1).register(CID, CID)
       // vote for accept
       acceptUserCall = await governance.connect(voter1).voteToAcceptUser(6)
@@ -152,6 +184,7 @@ describe('Governance', function () {
   describe('vote to ban a users', function () {
     let banUserCall
     beforeEach(async function () {
+      await users.connect(owner).acceptUser(5) // transfer ownership
       await users.connect(newComer1).register(CID, CID)
       await users.connect(newComer2).register(CID, CID)
       // vote for accept
@@ -208,9 +241,32 @@ describe('Governance', function () {
     })
   })
 
+  describe('ask to recover an account', function () {
+    let askForRecoverCall
+    beforeEach(async function () {
+      await users.connect(owner).acceptUser(5) // transfer ownership
+      askForRecoverCall = await governance
+        .connect(voter6)
+        .askToRecoverAccount(2)
+    })
+
+    it('should emit a AskForRecover event', async function () {
+      expect(askForRecoverCall)
+        .to.emit(governance, 'AskForRecover')
+        .withArgs(voter6.address, 2)
+    })
+
+    it('should revert if the ID do not correspond to an Approved user', async function () {
+      await expect(
+        governance.connect(voter4).askToRecoverAccount(67)
+      ).to.be.revertedWith('Governance: user must be approved to vote')
+    })
+  })
+
   describe('vote to recover an account', function () {
     let recoverAccount
     beforeEach(async function () {
+      await users.connect(owner).acceptUser(5) // transfer ownership
       await users.connect(newComer1).register(CID, CID)
       await users.connect(newComer2).register(CID, CID)
       // vote for accept newComer1
@@ -268,6 +324,7 @@ describe('Governance', function () {
   describe('Vote to ban item', function () {
     // publish article / review / comment with an accepted users (voter1)
     beforeEach(async function () {
+      await users.connect(owner).acceptUser(5) // transfer ownership
       await articles.connect(voter1).publish([], CID, CID)
       await reviews.connect(voter1).post(CID, 1)
       await comments.connect(voter1).post(CID, articles.address, 1)

@@ -59,7 +59,9 @@ describe('Comments', function () {
     await comments.deployed()
 
     // Set contracts address
-    await articles.setContracts(reviews.address, comments.address)
+    await articles
+      .connect(owner)
+      .setContracts(reviews.address, comments.address)
   })
 
   describe('Deployment', function () {
@@ -141,6 +143,12 @@ describe('Comments', function () {
         comments.connect(article1Author).post(CID, comments.address, 45)
       ).to.be.revertedWith('Comments: cannot comment an inexistant Comment')
     })
+
+    it('should revert if the target address is different from the one allowed', async function () {
+      await expect(
+        comments.connect(comment1Author).post(CID, users.address, 1)
+      ).to.be.revertedWith('Comments: must be posted on appropriated contract')
+    })
   })
 
   describe('ban', function () {
@@ -174,6 +182,15 @@ describe('Comments', function () {
     it('should revert if not owner atempt to ban a post', async function () {
       await expect(comments.connect(wallet1).banPost(2)).to.be.revertedWith(
         'Users: caller is not the owner'
+      )
+    })
+
+    it('should revert if you banpost a comment who does not exist or is already banned', async function () {
+      await expect(comments.connect(owner).banPost(1)).to.be.revertedWith(
+        'Comments: This Comment does not exist or is already banned'
+      )
+      await expect(comments.connect(owner).banPost(3)).to.be.revertedWith(
+        'Comments: This Comment does not exist or is already banned'
       )
     })
   })

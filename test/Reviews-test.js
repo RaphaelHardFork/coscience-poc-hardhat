@@ -55,7 +55,9 @@ describe('Reviews', function () {
     await comments.deployed()
 
     // Set contracts address
-    await articles.setContracts(reviews.address, comments.address)
+    await articles
+      .connect(owner)
+      .setContracts(reviews.address, comments.address)
   })
 
   describe('Deployment', function () {
@@ -156,6 +158,15 @@ describe('Reviews', function () {
 
     it('should emit a ReviewBanned event', async function () {
       expect(banCall).to.emit(reviews, 'ReviewBanned').withArgs(1)
+    })
+
+    it('should revert if review does not exist or is already banned', async function () {
+      await expect(reviews.connect(owner).banPost(1)).to.be.revertedWith(
+        'Reviews: This Review does not exist or is already banned'
+      )
+      await expect(reviews.connect(owner).banPost(3)).to.be.revertedWith(
+        'Reviews: This Review does not exist or is already banned'
+      )
     })
   })
 

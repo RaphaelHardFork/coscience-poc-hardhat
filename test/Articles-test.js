@@ -46,10 +46,27 @@ describe('Articles', function () {
     await comments.deployed()
 
     // Set contracts address
-    await articles.setContracts(reviews.address, comments.address)
+    await articles
+      .connect(owner)
+      .setContracts(reviews.address, comments.address)
   })
 
   describe('Deployment', function () {})
+
+  describe('setContracts', function () {
+    it('should revert if you are note the owner', async function () {
+      await expect(
+        articles
+          .connect(wallet1)
+          .setContracts(reviews.address, comments.address)
+      ).to.be.revertedWith('Users: caller is not the owner')
+    })
+    it('should revert if you call this function a second time', async function () {
+      await expect(
+        articles.connect(owner).setContracts(reviews.address, comments.address)
+      ).to.be.revertedWith('Articles: this function is callable only one time')
+    })
+  })
 
   describe('publish an article', function () {
     let publishCall, coAuthor
@@ -134,6 +151,14 @@ describe('Articles', function () {
     it('should revert if not owner attempt to ban article', async function () {
       await expect(articles.connect(wallet2).banArticle(1)).to.be.revertedWith(
         'Users: caller is not the owner'
+      )
+    })
+    it('should revert is the article does not exist or already banned', async function () {
+      await expect(articles.connect(owner).banArticle(1)).to.be.revertedWith(
+        'Articles: This Article does not exist or is already banned'
+      )
+      await expect(articles.connect(owner).banArticle(5)).to.be.revertedWith(
+        'Articles: This Article does not exist or is already banned'
       )
     })
   })

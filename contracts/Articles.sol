@@ -37,7 +37,7 @@ contract Articles is ERC721Enumerable, IUsers {
 
     /// @dev    Comments.sol address is also stored to be used in require
     address private _comments;
-    
+
     /**
      * @notice              Events
      * @dev                 Emitted when an user publish an article
@@ -47,7 +47,7 @@ contract Articles is ERC721Enumerable, IUsers {
      * */
     event Published(address indexed author, uint256 indexed articleID, string abstractCID);
 
-     /**
+    /**
      * @dev                 Emitted when an user vote about the validity of an article
      * @param choice        vote choice of the user
      * @param articleID     voted article ID
@@ -92,7 +92,7 @@ contract Articles is ERC721Enumerable, IUsers {
      *           - {author}: address of the owner
      *           - {coAuthor}: array of co author's address
      *           - {contentBanned}: status of the article
-     *           - {...CID}: string of ipfs CID 
+     *           - {...CID}: string of ipfs CID
      *           - {comments}: array of linked comments' id
      *           - {reviews}: array of linked reviews' id
      *          NOTE comments[] & reviews[] are filled in contracts of the same name
@@ -131,7 +131,7 @@ contract Articles is ERC721Enumerable, IUsers {
      * @dev     Address in parameters are stored to be used in require (see fillCommentArray())
      *          This function can be called only one time and by the owner
      *          This function must be called just after deployment of Comments.sol
-     *          
+     *
      * @param reviews_ address of Reviews.sol
      * @param comments_ address of Comments.sol
      */
@@ -178,6 +178,10 @@ contract Articles is ERC721Enumerable, IUsers {
      * @param articleID  the article ID to ban
      */
     function banArticle(uint256 articleID) public onlyOwner returns (bool) {
+        require(
+            _article[articleID].id == articleID && _article[articleID].contentBanned == false,
+            "Articles: This Article does not exist or is already banned"
+        );
         _article[articleID].contentBanned = true;
         emit ArticleBanned(articleID);
         return true;
@@ -194,7 +198,7 @@ contract Articles is ERC721Enumerable, IUsers {
         _article[articleID].reviews.push(reviewID);
         return true;
     }
-  
+
     /**
      * @dev     Fill the comments array of the article with the commentID
      *          This function is only callable by Comments.sol and only when a comment is posted
@@ -202,7 +206,7 @@ contract Articles is ERC721Enumerable, IUsers {
      * @param   commentID   the comment ID to push
      */
     function fillCommentsArray(uint256 articleID, uint256 commentID) public returns (bool) {
-        require(msg.sender == address(_comments), "Articles: this function is only callable by Comments.sol");
+        require(msg.sender == _comments, "Articles: this function is only callable by Comments.sol");
         _article[articleID].comments.push(commentID);
         return true;
     }
@@ -271,7 +275,6 @@ contract Articles is ERC721Enumerable, IUsers {
         return _comments;
     }
 
-
     /**
      * @dev     Return the struct of an article
      * @param   articleID   article id
@@ -284,7 +287,7 @@ contract Articles is ERC721Enumerable, IUsers {
     /**
      * @dev     Check if an article ID correspond to an existing article
      * @param   articleID   article id
-     * @return  boolean 
+     * @return  boolean
      */
     function isArticle(uint256 articleID) public view returns (bool) {
         if (_article[articleID].author == address(0)) {
@@ -302,7 +305,7 @@ contract Articles is ERC721Enumerable, IUsers {
      * @param   from    address of the sender
      * @param   to      address of the recipient
      * @param   tokenId token ID
-     */    
+     */
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -315,9 +318,8 @@ contract Articles is ERC721Enumerable, IUsers {
     /**
      * @dev     This fonction is override to use ERC721.sol
      * @param   tokenId token ID
-     */    
+     */
     function _burn(uint256 tokenId) internal virtual override(ERC721) {
         super._burn(tokenId);
     }
-
 }

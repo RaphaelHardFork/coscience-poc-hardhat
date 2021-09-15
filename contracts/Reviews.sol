@@ -33,7 +33,7 @@ contract Reviews is ERC721Enumerable, IUsers {
     Users private _users;
     Articles private _articles;
 
-   /**
+    /**
      * @notice              Events
      * @dev                 Emitted when an user post a reviews
      * @param poster        address of the poster
@@ -42,7 +42,7 @@ contract Reviews is ERC721Enumerable, IUsers {
      * */
     event Posted(address indexed poster, uint256 indexed reviewID, uint256 targetID);
 
-     /**
+    /**
      * @notice              Events
      * @dev                 Emitted when a reviews is banned
      * @param _reviewID     banned reviews ID
@@ -73,12 +73,12 @@ contract Reviews is ERC721Enumerable, IUsers {
         _;
     }
 
-     /**
+    /**
      * @dev Struct Reviews contains the following keys:
      *          - {contentBanned}: status of the reviews
      *          - {author}: address of the author
      *          - {id}: set by Counters.sol
-     *          - {vote}: number of vote 
+     *          - {vote}: number of vote
      *          - {targetID}: ID of the corresponding article
      *          - {contentCID}: string of ipfs CID
      *          - {comments}: array of linked comments id
@@ -145,6 +145,10 @@ contract Reviews is ERC721Enumerable, IUsers {
      * @param reviewID  the reviews ID to ban
      */
     function banPost(uint256 reviewID) public onlyOwner returns (bool) {
+        require(
+            _review[reviewID].id == reviewID && _review[reviewID].contentBanned == false,
+            "Reviews: This Review does not exist or is already banned"
+        );
         _review[reviewID].contentBanned = true;
 
         emit ReviewBanned(reviewID);
@@ -194,9 +198,9 @@ contract Reviews is ERC721Enumerable, IUsers {
         return super.supportsInterface(interfaceId);
     }
 
-     /**
+    /**
      * @dev     Return the struct of an article
-     * @param reviewID   reviews id
+     * @param   reviewID   reviews id
      * @return  Reviews struct
      */
     function reviewInfo(uint256 reviewID) public view returns (Review memory) {
@@ -206,7 +210,7 @@ contract Reviews is ERC721Enumerable, IUsers {
     /**
      * @dev     Check if an reviews ID correspond to an existing reviews
      * @param   reviewID   reviews id
-     * @return  boolean 
+     * @return  boolean
      */
     function isReview(uint256 reviewID) public view returns (bool) {
         if (_review[reviewID].author == address(0)) {
@@ -224,7 +228,7 @@ contract Reviews is ERC721Enumerable, IUsers {
      * @param   from    address of the sender
      * @param   to      address of the recipient
      * @param   tokenId token ID
-     */    
+     */
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -237,7 +241,7 @@ contract Reviews is ERC721Enumerable, IUsers {
     /**
      * @dev     This fonction is override to use ERC721.sol
      * @param   tokenId token ID
-     */    
+     */
     function _burn(uint256 tokenId) internal virtual override(ERC721) {
         super._burn(tokenId);
     }

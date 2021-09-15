@@ -1,22 +1,47 @@
 {
   "Users": {
-    "rinkeby": { "address": "0x2c48E3F532786744b9cceB935c93e7859298adDe" },
-    "goerli": { "address": "0x2c48E3F532786744b9cceB935c93e7859298adDe" },
-    "bscTestnet": { "address": "0x2c48E3F532786744b9cceB935c93e7859298adDe" },
+    "rinkeby": { "address": "0xCB92fef906e1dcaE39d930582A9cd2C3236A5dD9" },
+    "goerli": { "address": "0xCB92fef906e1dcaE39d930582A9cd2C3236A5dD9" },
+    "bscTestnet": { "address": "0xCB92fef906e1dcaE39d930582A9cd2C3236A5dD9" },
     "polygonTestnet": {
-      "address": "0x2c48E3F532786744b9cceB935c93e7859298adDe"
-    }
+      "address": "0xCB92fef906e1dcaE39d930582A9cd2C3236A5dD9"
+    },
+    "kovan": { "address": "0xCB92fef906e1dcaE39d930582A9cd2C3236A5dD9" }
   },
   "Articles": {
-    "rinkeby": { "address": "0x20B05d0Dfc12A4C71b55AfC14eCC5C452172c25b" }
+    "rinkeby": { "address": "0xFEF1b4566D765A451078dd2D833e3e9b1319A95D" },
+    "goerli": { "address": "0xFEF1b4566D765A451078dd2D833e3e9b1319A95D" },
+    "kovan": { "address": "0xFEF1b4566D765A451078dd2D833e3e9b1319A95D" },
+    "bscTestnet": { "address": "0xFEF1b4566D765A451078dd2D833e3e9b1319A95D" },
+    "polygonTestnet": {
+      "address": "0xFEF1b4566D765A451078dd2D833e3e9b1319A95D"
+    }
   },
   "Reviews": {
-    "rinkeby": { "address": "0xeAD88fFeee136e6a5EE7bdD5bb3007E424258019" }
+    "rinkeby": { "address": "0xb54e636E4e426c813486348B2caa8d8374BA812A" },
+    "goerli": { "address": "0xb54e636E4e426c813486348B2caa8d8374BA812A" },
+    "kovan": { "address": "0xb54e636E4e426c813486348B2caa8d8374BA812A" },
+    "bscTestnet": { "address": "0xb54e636E4e426c813486348B2caa8d8374BA812A" },
+    "polygonTestnet": {
+      "address": "0xb54e636E4e426c813486348B2caa8d8374BA812A"
+    }
   },
   "Comments": {
-    "rinkeby": { "address": "0x5DF53542eC8701f8cd6e23159305952ce394BDAE" }
+    "rinkeby": { "address": "0xa72576FC292d9BD9Cddf9170a63aB221a62ae6d4" },
+    "goerli": { "address": "0xa72576FC292d9BD9Cddf9170a63aB221a62ae6d4" },
+    "kovan": { "address": "0xa72576FC292d9BD9Cddf9170a63aB221a62ae6d4" },
+    "bscTestnet": { "address": "0xa72576FC292d9BD9Cddf9170a63aB221a62ae6d4" },
+    "polygonTestnet": {
+      "address": "0xa72576FC292d9BD9Cddf9170a63aB221a62ae6d4"
+    }
   },
   "Governance": {
-    "rinkeby": { "address": "0x3119C752010C65D0D1CC7086052d9Be13707fF17" }
+    "rinkeby": { "address": "0x99504699E5ee7f6C6259cf4D3F3FDc9C7E934BDA" },
+    "goerli": { "address": "0x99504699E5ee7f6C6259cf4D3F3FDc9C7E934BDA" },
+    "kovan": { "address": "0x99504699E5ee7f6C6259cf4D3F3FDc9C7E934BDA" },
+    "bscTestnet": { "address": "0x99504699E5ee7f6C6259cf4D3F3FDc9C7E934BDA" },
+    "polygonTestnet": {
+      "address": "0x99504699E5ee7f6C6259cf4D3F3FDc9C7E934BDA"
+    }
   }
 }

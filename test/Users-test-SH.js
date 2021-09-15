@@ -48,7 +48,9 @@ describe('Users', function () {
     await comments.deployed()
 
     // Set contracts address
-    await articles.setContracts(reviews.address, comments.address)
+    await articles
+      .connect(owner)
+      .setContracts(reviews.address, comments.address)
 
     const Governance = await ethers.getContractFactory('Governance')
     governance = await Governance.connect(dev).deploy(
@@ -59,13 +61,26 @@ describe('Users', function () {
     )
 
     // Set Contracts
-    await users.setContracts(governance.address)
+    await users.connect(owner).setContracts(governance.address)
     // END OF DEPLOYMENT
   })
 
   describe('Deployment', function () {
     it('should asign owner as the owner', async function () {
       expect(await users.owner()).to.equal(owner.address)
+    })
+  })
+
+  describe('setContracts', function () {
+    it('should revert if you try call setContract a second time', async function () {
+      await expect(
+        users.connect(owner).setContracts(governance.address)
+      ).to.be.revertedWith('Users: this function is callable only one time')
+    })
+    it('should revert if you are not the owner', async function () {
+      await expect(
+        users.connect(wallet1).setContracts(governance.address)
+      ).to.be.revertedWith('Ownable')
     })
   })
 

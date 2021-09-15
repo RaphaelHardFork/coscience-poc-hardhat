@@ -31,7 +31,7 @@ contract Comments is ERC721Enumerable, IUsers {
     Users private _users;
     Articles private _articles;
     Reviews private _reviews;
-    
+
     /**
      * @notice              Events
      * @dev                 Emitted when an user post an comment
@@ -77,7 +77,7 @@ contract Comments is ERC721Enumerable, IUsers {
      * @dev Struct Comment contains the following keys:
      *          - {contentBanned}: status of the comment
      *          - {id}: set by Counters.sol
-     *          - {vote}: number of vote 
+     *          - {vote}: number of vote
      *          - {targetID}: ID of an item
      *          - {target}: address of an item
      *          - {author}: address of the author
@@ -119,7 +119,7 @@ contract Comments is ERC721Enumerable, IUsers {
         _reviews = Reviews(reviewsContract);
     }
 
-     /**
+    /**
      * @notice  Public functions
      * @dev     This function allow a user to post a comment
      *          Comment must be posted only on either Comments.sol, Articles.sol or Reviews.sol
@@ -135,7 +135,10 @@ contract Comments is ERC721Enumerable, IUsers {
         address target,
         uint256 targetID
     ) public onlyUser returns (uint256) {
-        require(target == address(this)||target == address(_reviews)||target == address(_articles), "Comments: must be posted on appropried contract");
+        require(
+            target == address(this) || target == address(_reviews) || target == address(_articles),
+            "Comments: must be posted on appropriated contract"
+        );
         _commentID.increment();
         uint256 commentID = _commentID.current();
         _safeMint(msg.sender, commentID);
@@ -169,6 +172,10 @@ contract Comments is ERC721Enumerable, IUsers {
      * @param   commentID  the comment ID to ban
      */
     function banPost(uint256 commentID) public onlyOwner returns (bool) {
+        require(
+            _comment[commentID].id == commentID && _comment[commentID].contentBanned == false,
+            "Comments: This Comment does not exist or is already banned"
+        );
         _comment[commentID].contentBanned = true;
 
         emit CommentBanned(commentID);
@@ -203,10 +210,24 @@ contract Comments is ERC721Enumerable, IUsers {
 
     /**
      * @dev     Return the struct of a comment
-     * @param   commentID   comment id 
+     * @param   commentID   comment id
      */
     function commentInfo(uint256 commentID) public view returns (Comment memory) {
         return _comment[commentID];
+    }
+
+    /**
+     * @dev Check if a comment ID match an existing one
+     * @param commentID  comment id
+     * @return boolean
+     */
+
+    function isComment(uint256 commentID) public view returns (bool) {
+        if (_comment[commentID].author == address(0)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -217,7 +238,7 @@ contract Comments is ERC721Enumerable, IUsers {
      * @param   from    address of the sender
      * @param   to      address of the recipient
      * @param   tokenId token ID
-     */    
+     */
     function _beforeTokenTransfer(
         address from,
         address to,
@@ -230,7 +251,7 @@ contract Comments is ERC721Enumerable, IUsers {
     /**
      * @dev     This fonction is override to use ERC721.sol
      * @param   tokenId token ID
-     */    
+     */
     function _burn(uint256 tokenId) internal virtual override(ERC721) {
         super._burn(tokenId);
     }
