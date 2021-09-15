@@ -14,30 +14,28 @@ import "./Governance.sol";
  * @title   Users and Owners
  * @author  Sarah, Henry & Raphael
  *
- * @notice  This contract is set to create blockchain identity of users of the CoScience App.
+ * @notice  This contract is set to create blockchain identity of users of the CoScience dApp.
  * @dev     Important features:
  *              - Allow users to register more than one wallet
- *              - Recovery user account through a password
+ *              - Recovery user account with a new wallet
  *              - Users have to be validated by a centralized agent (owner)
+ *              - The centralized agent become a governance contract after 5 approved users
  *              - Informations of the user are stored on IPFS
  * */
 
 contract Users is Ownable, IUsers {
     using Counters for Counters.Counter;
+
     /**
-     * @notice State variables
-     * @dev {_userID} use Counters to create unique ids
+     * @notice  State variables
+     * @dev     {_userID} use Counters to create unique ids
      * */
     Counters.Counter private _userID;
+
+    /// @dev    use Counters to count the number of accepted users
     Counters.Counter private _acceptedUser;
-
-    /// @dev    A mapping to find user's Struct with the {id}
-    mapping(uint256 => User) private _user;
-
-    /// @dev    A mapping to get the user ID with the user wallet address
-    mapping(address => uint256) private _userIdPointer;
-
-    // governance address
+    
+    /// @dev    Storage for the governance address
     address private _governance;
 
     /**
@@ -46,16 +44,14 @@ contract Users is Ownable, IUsers {
      *
      *          At this moment the user still have the Pending status in his account
      * */
-    event Registered(address indexed user, uint256 userID);
+    event Registered(address indexed user, uint256 indexed userID);
 
-    /**
-     * @dev    Emitted when an user change his profile informations (bio, avatar, ...)
-     * */
-    event Edited(address indexed user, uint256 indexed userID, string profileCID);
 
-    /**
-     * @dev    Emitted when an user is approved by the owner of the contract
-     * */
+    /// @dev    Emitted when an user change his profile informations (bio, avatar, ...)
+    event Edited(address indexed user, uint256 indexed userID, string indexed profileCID);
+
+
+    /// @dev    Emitted when an user is approved by the owner of the contract
     event Approved(uint256 indexed userID);
 
     /**
@@ -64,37 +60,36 @@ contract Users is Ownable, IUsers {
      * */
     event Banned(uint256 indexed userID);
 
-    /**
-     * @dev     Emitted when an user use this function to recover his user profile
-     * */
+
+    /// @dev     Emitted when an user use this function to recover his user profile
     event ProfileRecovered(address indexed account, uint256 indexed userID);
 
     /**
      * @notice  Modifiers
      * @dev     This prevent a Pending or Not Approved user to use a function
      *
-     *          A new modifier is set in others contracts for this purpose
+     *          This modifier is also created in Articles.sol, Reviews.sol and Comments.sol
      * */
     modifier onlyUser(address account) {
         require(isUser(account) == true, "Users: you must be approved to use this feature.");
         _;
     }
-    /**
-     * @dev     This prevent a wallet to be registered on several user ids
-     * */
+
+    
+    /// @dev     This prevent a wallet to be registered on several user ids
     modifier alreadyRegistered(address account) {
         require(_userIdPointer[account] == 0, "Users: this wallet is already registered");
         _;
     }
 
     /**
-     * @notice Structs, Enum and Arrays
-     * @dev Struct User contains the following keys:
-     *          - {id}: set by Counters.sol
-     *          - {status}: user approval status
-     *          - {profileCID}: CID pointer to user's profile information (bio, avatar, laboratory, ...)
-     *          - {nameCID}: CID pointer to user's permanent information, this one is not editable
-     *          - {walletList}: list of wallets owned by the user
+     * @notice      Structs, Enum and Arrays
+     * @dev         Struct User contains the following keys:
+     *                - {id}: set by Counters.sol
+     *                - {status}: user approval status (see IUsers.sol)
+     *                - {profileCID}: CID pointer to user's profile information (bio, avatar, laboratory, ...)
+     *                - {nameCID}: CID pointer to user's permanent information, this one is not editable
+     *                - {walletList}: list of wallets owned by the user
      * */
     struct User {
         uint256 id;
@@ -104,29 +99,41 @@ contract Users is Ownable, IUsers {
         address[] walletList;
     }
 
+    /// @dev    A mapping to get the user ID with the user wallet address
+    mapping(address => uint256) private _userIdPointer;
+
+    /// @dev    A mapping to find user's Struct with the {id}
+    mapping(uint256 => User) private _user;
+
     /**
      * @notice  Constructor
-     * @dev     The parameter {owner_} is set in case the deployer is different from the owner (see Ownable.sol)
+     * @param   owner_ this address is set in case the deployer is different from the owner (see Ownable.sol)
      * */
     constructor(address owner_) Ownable() {
         transferOwnership(owner_);
     }
 
-    function setContracts(address governance_) public returns (bool) {
+
+    /**
+     * @notice  Public functions
+     * @dev     The address in parameter will be the owner of the contract after 5 accepted user (see acceptUser())
+     *          This function is callable only one time by the owner
+     *
+     * @param governance_ address of Governance.sol 
+     * */
+    function setContracts(address governance_) public onlyOwner returns (bool) {
         require(_governance == address(0), "Users: this function is callable only one time");
         _governance = governance_;
         return true;
     }
 
     /**
-     * @notice  Public functions
-     * @dev     This function allow a wallet to register as a user
+     * @dev     This function allow a wallet to register as an user
      *
      *          Emit a {Registered} event
      *
-     * @param profileCID_       the CID hash allowing to get the user's profile informations
-     * @param nameCID_          the CID hash allowing to get the user's informations (not editable)
-
+     * @param profileCID_   the CID hash allowing to get the user's profile informations
+     * @param nameCID_      the CID hash allowing to get the user's informations (not editable)
      */
     function register(string memory profileCID_, string memory nameCID_)
         public
@@ -149,7 +156,7 @@ contract Users is Ownable, IUsers {
 
     /**
      * @dev     This function allow an user to change his profile information, it changes the CID pointer
-     *          NOTE it doesn't change the crucials informations like name, ...
+     *          NOTE it doesn't change the informations his identity (name, institutional e-mail, ...)
      *
      *          Emit an {Edited} event.
      *
@@ -165,6 +172,8 @@ contract Users is Ownable, IUsers {
 
     /**
      * @dev This function allows the owner to accept an user which is in Pending status
+     *      After 5 users accepted by the owner, the ownership of this contract is transferred
+     *      to Governance.sol
      *
      *      Emit an {Approved} event.
      *
@@ -212,12 +221,12 @@ contract Users is Ownable, IUsers {
     }
 
     /**
-     * @dev     This function is called by the Owner to recover the lost account of an user.
+     * @dev This function is called by the Owner to recover the lost account of an user.
      *
-     *          Emit a {ProfileRecovered} event.
+     *      Emit a {ProfileRecovered} event.
      *
-     * @param newAddress    the new address of the user
-     * @param userID        ID of the user's profile
+     * @param   newAddress  the new address of the user
+     * @param   userID      ID of the user's profile
      **/
     function recoverAccount(uint256 userID, address newAddress)
         public
@@ -233,27 +242,46 @@ contract Users is Ownable, IUsers {
     }
 
     /**
-     * @notice Getter functions
-     * @dev    Return the ID of the corresponding profile of the account address
+     * @notice  Getter functions
+     * @dev     Return the ID of the corresponding profile of the account address
      *
-     * @param account   account address
+     * @param   account   account address
+     * @return  uint256
      * */
     function profileID(address account) public view returns (uint256) {
         return _userIdPointer[account];
     }
 
+    /**
+     * @dev     Return the user info from the struct
+     * @param   userID   user ID is specify to get access to the corresponding Struct User
+     * @return  User (struct)
+     */
     function userInfo(uint256 userID) public view returns (User memory) {
         return _user[userID];
     }
 
+    /**
+     * @dev     Return the user status
+     * @param   userID   user ID is specify to get access to the corresponding Whitelist status
+     * @return  Whitelist (enum, see IUsers.sol)
+     */
     function userStatus(uint256 userID) public view returns (WhiteList) {
         return _user[userID].status;
     }
 
+    /**
+     * @dev     Return the total number of users
+     * @return  uint256
+     */
     function nbOfUsers() public view returns (uint256) {
         return _userID.current();
     }
 
+    /**
+     * @dev     Return the number of accepted users
+     * @return  uint256
+     */
     function nbOfAcceptedUsers() public view returns (uint256) {
         return _acceptedUser.current();
     }
@@ -261,9 +289,10 @@ contract Users is Ownable, IUsers {
     /**
      *  @dev    Return true if an user has the Approved status
      *
-     *          This function is used in modifier in others contracts
+     *          This function is used in the modifier {onlyUser} of this contract
+     *          and in others contracts
      *
-     *  @param account address checked
+     *  @param  account address checked
      * */
     function isUser(address account) public view returns (bool) {
         uint256 userID = _userIdPointer[account];
